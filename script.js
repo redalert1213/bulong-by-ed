@@ -892,7 +892,85 @@ function updateNavProfile(){
 }
 
 // ── KINIG ─────────────────────────────────────
-$('kinigBtn').addEventListener('click',()=>{kinigOpen=!kinigOpen;$('kinigChat').classList.toggle('open',kinigOpen);if(kinigOpen){$('kinigInput').focus();$('kinigMessages').scrollTop=9999;}});
+// ── KINIG BUTTON — draggable + minimizable ────
+(function(){
+  const btn = $('kinigBtn');
+  if(!btn) return;
+  let isDragging=false, hasDragged=false;
+  let startX=0,startY=0,origX=0,origY=0;
+  const isMobile = ()=>window.matchMedia('(pointer:coarse)').matches || window.innerWidth<=600;
+
+  // On mobile: start minimized
+  if(isMobile()) btn.classList.add('minimized');
+
+  function getCoords(e){ return e.touches ? {x:e.touches[0].clientX,y:e.touches[0].clientY} : {x:e.clientX,y:e.clientY}; }
+
+  function onStart(e){
+    const {x,y}=getCoords(e);
+    startX=x; startY=y;
+    const r=btn.getBoundingClientRect();
+    origX=r.left; origY=r.top;
+    isDragging=true; hasDragged=false;
+    btn.classList.add('dragging');
+    e.preventDefault();
+  }
+
+  function onMove(e){
+    if(!isDragging) return;
+    const {x,y}=getCoords(e);
+    const dx=x-startX, dy=y-startY;
+    if(Math.abs(dx)>5||Math.abs(dy)>5) hasDragged=true;
+    if(!hasDragged) return;
+    const nx=Math.max(8,Math.min(window.innerWidth-btn.offsetWidth-8, origX+dx));
+    const ny=Math.max(8,Math.min(window.innerHeight-btn.offsetHeight-8, origY+dy));
+    btn.style.left=nx+'px'; btn.style.top=ny+'px';
+    btn.style.right='auto'; btn.style.bottom='auto';
+    e.preventDefault();
+  }
+
+  function onEnd(e){
+    if(!isDragging) return;
+    isDragging=false;
+    btn.classList.remove('dragging');
+    if(!hasDragged){
+      // It was a tap/click — handle open/minimize
+      if(isMobile() && btn.classList.contains('minimized')){
+        // First tap on mobile expands it
+        btn.classList.remove('minimized');
+      } else {
+        kinigOpen=!kinigOpen;
+        $('kinigChat').classList.toggle('open',kinigOpen);
+        if(kinigOpen){$('kinigInput').focus();$('kinigMessages').scrollTop=9999;}
+      }
+    }
+    // Snap to nearest edge on mobile
+    if(isMobile() && hasDragged){
+      const r=btn.getBoundingClientRect();
+      const cx=r.left+r.width/2;
+      const snapRight=cx > window.innerWidth/2;
+      const ny=Math.max(8,Math.min(window.innerHeight-btn.offsetHeight-8, r.top));
+      btn.style.top=ny+'px';
+      btn.style.left=snapRight?(window.innerWidth-btn.offsetWidth-12)+'px':'12px';
+      btn.style.right='auto'; btn.style.bottom='auto';
+    }
+    hasDragged=false;
+  }
+
+  // Long press on mobile to re-minimize
+  let pressTimer=null;
+  btn.addEventListener('touchstart',e=>{
+    pressTimer=setTimeout(()=>{
+      if(!isDragging){ btn.classList.add('minimized'); pressTimer=null; }
+    },600);
+    onStart(e);
+  },{passive:false});
+  btn.addEventListener('touchmove',e=>{ clearTimeout(pressTimer); onMove(e); },{passive:false});
+  btn.addEventListener('touchend',e=>{ clearTimeout(pressTimer); onEnd(e); });
+  btn.addEventListener('mousedown',onStart);
+  window.addEventListener('mousemove',onMove);
+  window.addEventListener('mouseup',onEnd);
+})();
+
 $('kinigClose').addEventListener('click',()=>{kinigOpen=false;$('kinigChat').classList.remove('open');});
 $('kinigSend').addEventListener('click',sendKinig);
 $('kinigInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendKinig();});
@@ -1077,46 +1155,7 @@ function launchApp(user,profile){
   setTimeout(dismissLoader, 3500); // hard fallback
 })();
 
-// ── CUSTOM CURSOR ─────────────────────────────
-(function(){
-  // Only on non-touch devices
-  if(window.matchMedia('(pointer:coarse)').matches) return;
-
-  const dot  = document.createElement('div'); dot.id  = 'customCursor';
-  const ring = document.createElement('div'); ring.id = 'customCursorRing';
-  document.body.appendChild(dot);
-  document.body.appendChild(ring);
-
-  let mx=0, my=0, rx=0, ry=0;
-  document.addEventListener('mousemove', e=>{
-    mx = e.clientX; my = e.clientY;
-    dot.style.left  = mx + 'px';
-    dot.style.top   = my + 'px';
-  });
-
-  // Ring follows with lag
-  (function animRing(){
-    rx += (mx - rx) * 0.14;
-    ry += (my - ry) * 0.14;
-    ring.style.left = rx + 'px';
-    ring.style.top  = ry + 'px';
-    requestAnimationFrame(animRing);
-  })();
-
-  // Hover state on interactive elements
-  document.addEventListener('mouseover', e=>{
-    if(e.target.matches('button,a,input,textarea,[role="button"],.confession-glow,.react-btn,.mf-btn,.swatch')){
-      document.body.classList.add('cursor-hover');
-    }
-  });
-  document.addEventListener('mouseout', e=>{
-    if(e.target.matches('button,a,input,textarea,[role="button"],.confession-glow,.react-btn,.mf-btn,.swatch')){
-      document.body.classList.remove('cursor-hover');
-    }
-  });
-  document.addEventListener('mousedown',()=>document.body.classList.add('cursor-click'));
-  document.addEventListener('mouseup',  ()=>document.body.classList.remove('cursor-click'));
-})();
+// ── CUSTOM CURSOR — removed per user request ──
 
 // ── HAPTIC FEEDBACK ───────────────────────────
 document.addEventListener('click', ()=>{
@@ -1378,68 +1417,102 @@ document.getElementById('zoomMeBtn')?.addEventListener('click',()=>{
   const ctx=canvas.getContext('2d');
   let drawing=false, color='#84A98C', brushSz=4, erasing=false;
 
-  // Set canvas actual size
+  // Proper resize — called when doodle tab becomes visible
   function resizeCanvas(){
-    const w=canvas.offsetWidth;
-    const h=220;
-    if(canvas.width!==w||canvas.height!==h){
-      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-      canvas.width=w; canvas.height=h;
-      ctx.fillStyle='#0F1518'; ctx.fillRect(0,0,w,h);
-      ctx.putImageData(img,0,0);
-    }
+    const w = canvas.parentElement?.offsetWidth || canvas.offsetWidth || 400;
+    const h = 220;
+    // Save current drawing
+    let saved = null;
+    try { saved = ctx.getImageData(0,0,canvas.width,canvas.height); } catch(e){}
+    canvas.width = w;
+    canvas.height = h;
+    // Fill background
+    ctx.fillStyle = '#0F1518';
+    ctx.fillRect(0,0,w,h);
+    // Restore drawing
+    if(saved) try { ctx.putImageData(saved,0,0); } catch(e){}
+    // Reset context state
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   }
 
+  // Init canvas when doodle tab is clicked
+  document.querySelector('.type-tab[data-type="doodle"]')?.addEventListener('click',()=>{
+    setTimeout(resizeCanvas, 50);
+  });
+
   function getPos(e){
-    const r=canvas.getBoundingClientRect();
-    const scaleX=canvas.width/r.width;
-    const scaleY=canvas.height/r.height;
-    const src=e.touches?e.touches[0]:e;
-    return{x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY};
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x:(src.clientX - r.left)*scaleX, y:(src.clientY - r.top)*scaleY };
+  }
+
+  function startDraw(e){
+    e.preventDefault();
+    drawing = true;
+    const {x,y} = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    // Draw a dot on single tap/click
+    ctx.lineWidth = brushSz;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = erasing ? '#0F1518' : color;
+    ctx.arc(x,y,brushSz/2,0,Math.PI*2);
+    ctx.fillStyle = erasing ? '#0F1518' : color;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x,y);
   }
 
   function draw(e){
     if(!drawing) return;
     e.preventDefault();
-    const{x,y}=getPos(e);
-    ctx.lineWidth=brushSz;
-    ctx.lineCap='round';
-    ctx.lineJoin='round';
-    ctx.strokeStyle=erasing?'#0F1518':color;
+    const {x,y} = getPos(e);
+    ctx.lineWidth = brushSz;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = erasing ? '#0F1518' : color;
     ctx.lineTo(x,y);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x,y);
   }
 
-  function startDraw(e){ e.preventDefault(); resizeCanvas(); drawing=true; ctx.beginPath(); const{x,y}=getPos(e); ctx.moveTo(x,y); }
-  function endDraw(){ drawing=false; }
+  function endDraw(){ drawing = false; ctx.beginPath(); }
 
-  canvas.addEventListener('mousedown',startDraw);
-  canvas.addEventListener('mousemove',draw);
-  canvas.addEventListener('mouseup',endDraw);
-  canvas.addEventListener('mouseleave',endDraw);
-  canvas.addEventListener('touchstart',startDraw,{passive:false});
-  canvas.addEventListener('touchmove',draw,{passive:false});
-  canvas.addEventListener('touchend',endDraw);
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', draw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
 
   // Color picker
   document.querySelectorAll('.doodle-color').forEach(btn=>{
     btn.addEventListener('click',()=>{
       document.querySelectorAll('.doodle-color').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      color=btn.dataset.color; erasing=false;
-      $('doodleErase').classList.remove('active');
+      color = btn.dataset.color; erasing = false;
+      $('doodleErase')?.classList.remove('active');
     });
   });
 
-  $('brushSize')?.addEventListener('input',function(){ brushSz=parseInt(this.value); });
+  $('brushSize')?.addEventListener('input',function(){ brushSz = parseInt(this.value); });
   $('doodleErase')?.addEventListener('click',function(){
-    erasing=!erasing;
-    this.classList.toggle('active',erasing);
+    erasing = !erasing;
+    this.classList.toggle('active', erasing);
   });
-  $('doodleClear')?.addEventListener('click',()=>{ ctx.fillStyle='#0F1518'; ctx.fillRect(0,0,canvas.width,canvas.height); });
+  $('doodleClear')?.addEventListener('click',()=>{
+    ctx.fillStyle = '#0F1518';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  });
 
-  // Init background
-  setTimeout(()=>{ resizeCanvas(); },100);
+  // Init on load
+  setTimeout(resizeCanvas, 200);
 
   // Expose for submission
   window._getDoodleBase64=()=>canvas.toDataURL('image/png');
