@@ -363,13 +363,14 @@ body.light #constellationCanvas{opacity:0.25;mix-blend-mode:multiply;}
 .reply-send:hover{background:var(--mauve);}
 
 /* ── KINIG ────────────────────────────────── */
-.kinig-btn{position:fixed;bottom:24px;right:22px;z-index:850;background:var(--glass);backdrop-filter:blur(16px);border:1.5px solid rgba(201,168,196,0.35);border-radius:22px;padding:8px 14px 8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(201,168,196,0.2);transition:box-shadow 0.25s,border-color 0.25s;}
+.kinig-btn{position:fixed;bottom:24px;right:22px;z-index:850;background:var(--glass);backdrop-filter:blur(16px);border:1.5px solid rgba(201,168,196,0.35);border-radius:22px;padding:8px 14px 8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(201,168,196,0.2);transition:box-shadow 0.25s,border-color 0.25s;user-select:none;-webkit-user-select:none;touch-action:none;}
 .kinig-btn:hover{box-shadow:0 12px 36px rgba(201,168,196,0.3);}
-/* Mobile: minimized pill state */
-.kinig-btn.minimized{width:44px;height:44px;padding:0;border-radius:50%;justify-content:center;overflow:hidden;}
-.kinig-btn.minimized .kinig-label,.kinig-btn.minimized .kinig-badge{display:none;}
-.kinig-btn.minimized .kinig-face{margin:0;}
-.kinig-btn.dragging{transition:none;opacity:0.85;}
+/* Minimized: circle only showing avatar */
+.kinig-btn.minimized{width:48px;height:48px;padding:0;border-radius:50%;justify-content:center;overflow:hidden;}
+.kinig-btn.minimized .kinig-label{display:none;}
+.kinig-btn.minimized .kinig-badge{display:none;}
+.kinig-btn.minimized .kinig-avatar{width:48px;height:48px;border-radius:50%;}
+.kinig-btn.dragging{transition:none !important;opacity:0.9;}
 .kinig-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1e3040,var(--mauve));display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .kinig-face{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .kinig-face.small .kinig-eye{width:4px;height:4px;}
