@@ -537,3 +537,109 @@ body.quiet-hours #ambientCanvas{opacity:0.2;}
 .time-filter-wrap{display:flex;align-items:center;gap:8px;}
 .time-filter-label{font-size:11.5px;color:var(--muted);white-space:nowrap;min-width:72px;}
 .time-slider{width:90px;accent-color:var(--sage);cursor:pointer;height:3px;}
+
+/* ── iOS / MOBILE FIXES ───────────────────────*/
+/* Prevent black screen on iOS Safari/Chrome */
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-overflow-scrolling: touch; }
+
+/* App shell must be visible when active */
+.app-shell:not(.hidden) {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* iOS safe area padding for notch/home indicator */
+.navbar {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-top: env(safe-area-inset-top);
+}
+.map-controls {
+  bottom: max(24px, env(safe-area-inset-bottom));
+}
+.mood-live-counter {
+  bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
+}
+
+/* Mobile modal — full width, scrollable */
+@media (max-width: 600px) {
+  .modal-card {
+    max-height: 92vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 24px 24px 0 0;
+    margin: auto 0 0;
+  }
+  .modal-overlay { align-items: flex-end; }
+  .side-panel { width: 100% !important; max-width: 100%; border-radius: 24px 24px 0 0; }
+  .side-panel-inner { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .map-controls { width: calc(100% - 32px); justify-content: center; }
+  .time-slider { width: 120px; }
+  .mood-live-counter { left: 10px; min-width: 130px; }
+  .kinig-chat { width: calc(100vw - 20px); right: 10px; }
+  .type-tabs { gap: 4px; }
+  .type-tab { font-size: 11px; padding: 5px 8px; }
+}
+
+/* Prevent iOS rubber-band scroll on fixed elements */
+#map { -webkit-overflow-scrolling: auto; }
+
+/* ══════════════════════════════════════════════
+   BATCH 2 — NEW FEATURES
+   ══════════════════════════════════════════════ */
+
+/* ── VOICE RECORDER ───────────────────────────*/
+.voice-recorder{display:flex;flex-direction:column;gap:12px;}
+.voice-visualizer{background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;min-height:90px;justify-content:center;}
+.voice-bars{display:flex;align-items:center;gap:3px;height:40px;}
+.voice-bars span{width:4px;background:var(--sage);border-radius:4px;height:8px;transition:height 0.1s;display:block;}
+.voice-bars.recording span{animation:voiceBar 0.5s ease-in-out infinite alternate;}
+.voice-bars.recording span:nth-child(2){animation-delay:0.1s;}
+.voice-bars.recording span:nth-child(3){animation-delay:0.2s;}
+.voice-bars.recording span:nth-child(4){animation-delay:0.15s;}
+.voice-bars.recording span:nth-child(5){animation-delay:0.05s;}
+.voice-bars.recording span:nth-child(6){animation-delay:0.25s;}
+.voice-bars.recording span:nth-child(7){animation-delay:0.1s;}
+.voice-bars.recording span:nth-child(8){animation-delay:0.2s;}
+.voice-bars.recording span:nth-child(9){animation-delay:0.05s;}
+.voice-bars.recording span:nth-child(10){animation-delay:0.15s;}
+@keyframes voiceBar{0%{height:6px;background:var(--sage);}100%{height:32px;background:var(--mauve);}}
+.voice-timer{font-size:12px;color:var(--muted);font-family:var(--fb);letter-spacing:0.08em;}
+.voice-controls{display:flex;gap:8px;flex-wrap:wrap;}
+.voice-btn{flex:1;padding:9px 14px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-family:var(--fb);font-size:12.5px;color:var(--charcoal);cursor:pointer;transition:all 0.2s;text-align:center;}
+.voice-btn:hover{border-color:var(--sage);background:rgba(107,158,122,0.1);}
+.voice-btn.recording{border-color:#E8A5B0;color:#E8A5B0;animation:recordPulse 1s ease-in-out infinite;}
+@keyframes recordPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,165,176,0.4);}50%{box-shadow:0 0 0 6px rgba(232,165,176,0);}}
+.voice-play{border-color:var(--sage-l);color:var(--sage-l);}
+.voice-clear{border-color:rgba(192,128,128,0.3);color:rgba(192,128,128,0.6);}
+.voice-btn.hidden{display:none;}
+
+/* ── DOODLE CANVAS ────────────────────────────*/
+.doodle-wrap{border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);}
+#doodleCanvas{display:block;width:100%;background:#0F1518;touch-action:none;cursor:crosshair;}
+.doodle-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-top:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+.doodle-colors{display:flex;gap:6px;align-items:center;}
+.doodle-color{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform 0.15s,border-color 0.15s;flex-shrink:0;}
+.doodle-color.active{border-color:white;transform:scale(1.2);}
+.doodle-color:hover{transform:scale(1.15);}
+.doodle-tools{display:flex;align-items:center;gap:8px;}
+.brush-slider{width:70px;accent-color:var(--sage);cursor:pointer;}
+.doodle-tool-btn{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);background:transparent;cursor:pointer;font-size:14px;color:var(--muted);transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.doodle-tool-btn:hover{border-color:var(--sage);color:var(--charcoal);}
+.doodle-tool-btn.active{border-color:var(--sage);background:rgba(107,158,122,0.15);}
+
+/* ── CUSTOM MOOD COLOR ────────────────────────*/
+.custom-color-row{display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border);}
+.custom-color-row.hidden{display:none;}
+.color-picker-input{width:40px;height:30px;border:none;background:none;cursor:pointer;padding:0;border-radius:6px;}
+
+/* ── POPUP WHISPER THEMES ─────────────────────*/
+.popup-card{transition:background 0.4s,border-color 0.4s;}
+.popup-card.theme-grief{background:linear-gradient(160deg,#1a1f2e 0%,#161e22 100%);border-color:rgba(123,141,176,0.3);}
+.popup-card.theme-hope{background:linear-gradient(160deg,#2a2518 0%,#161e22 100%);border-color:rgba(240,201,127,0.25);}
+.popup-card.theme-love{background:linear-gradient(160deg,#2a1820 0%,#161e22 100%);border-color:rgba(232,165,176,0.25);}
+.popup-card.theme-melancholy{background:linear-gradient(160deg,#221a26 0%,#161e22 100%);border-color:rgba(184,160,179,0.25);}
+.popup-card.theme-longing{background:linear-gradient(160deg,#192219 0%,#161e22 100%);border-color:rgba(132,169,140,0.25);}
+.popup-card.theme-relief{background:linear-gradient(160deg,#1a2218 0%,#161e22 100%);border-color:rgba(168,196,162,0.25);}
