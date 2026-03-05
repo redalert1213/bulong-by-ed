@@ -1002,3 +1002,296 @@ function launchApp(user,profile){
     setTimeout(()=>{showToast('Welcome to Bulong. You are safe here. 🌿');Sound.welcome();},600);
   }
 }
+
+/* ══════════════════════════════════════════════
+   BATCH 1 — NEW FEATURES
+   ══════════════════════════════════════════════ */
+
+// ── LOADING SCREEN ────────────────────────────
+(function(){
+  const screen = document.getElementById('loadingScreen');
+  const bar    = document.getElementById('loadingBar');
+  const phrase = document.getElementById('loadingPhrase');
+  if(!screen) return;
+
+  const phrases = [
+    'Finding a quiet corner for you...',
+    'Lighting a candle...',
+    'The map is waking up...',
+    'Your whisper is welcome here...',
+    'Making space for what you carry...',
+  ];
+  let p = 0;
+  const phInterval = setInterval(()=>{
+    p = (p+1) % phrases.length;
+    phrase.style.opacity = '0';
+    setTimeout(()=>{ phrase.textContent = phrases[p]; phrase.style.opacity = '1'; }, 300);
+  }, 1400);
+  phrase.style.transition = 'opacity 0.3s';
+
+  // Animate bar
+  let pct = 0;
+  const barInterval = setInterval(()=>{
+    pct = Math.min(pct + Math.random()*18 + 4, 92);
+    bar.style.width = pct + '%';
+  }, 220);
+
+  // Dismiss once Firebase auth resolves (max 3.5s)
+  function dismissLoader(){
+    clearInterval(phInterval);
+    clearInterval(barInterval);
+    bar.style.width = '100%';
+    bar.style.transition = 'width 0.3s ease';
+    setTimeout(()=>{
+      screen.classList.add('fade-out');
+      setTimeout(()=>{ screen.style.display = 'none'; }, 720);
+    }, 300);
+  }
+
+  // Hook into auth state — dismiss when user is resolved
+  const origLaunch = window._bulongLaunchReady;
+  window._dismissLoader = dismissLoader;
+  setTimeout(dismissLoader, 3500); // hard fallback
+})();
+
+// ── CUSTOM CURSOR ─────────────────────────────
+(function(){
+  // Only on non-touch devices
+  if(window.matchMedia('(pointer:coarse)').matches) return;
+
+  const dot  = document.createElement('div'); dot.id  = 'customCursor';
+  const ring = document.createElement('div'); ring.id = 'customCursorRing';
+  document.body.appendChild(dot);
+  document.body.appendChild(ring);
+
+  let mx=0, my=0, rx=0, ry=0;
+  document.addEventListener('mousemove', e=>{
+    mx = e.clientX; my = e.clientY;
+    dot.style.left  = mx + 'px';
+    dot.style.top   = my + 'px';
+  });
+
+  // Ring follows with lag
+  (function animRing(){
+    rx += (mx - rx) * 0.14;
+    ry += (my - ry) * 0.14;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(animRing);
+  })();
+
+  // Hover state on interactive elements
+  document.addEventListener('mouseover', e=>{
+    if(e.target.matches('button,a,input,textarea,[role="button"],.confession-glow,.react-btn,.mf-btn,.swatch')){
+      document.body.classList.add('cursor-hover');
+    }
+  });
+  document.addEventListener('mouseout', e=>{
+    if(e.target.matches('button,a,input,textarea,[role="button"],.confession-glow,.react-btn,.mf-btn,.swatch')){
+      document.body.classList.remove('cursor-hover');
+    }
+  });
+  document.addEventListener('mousedown',()=>document.body.classList.add('cursor-click'));
+  document.addEventListener('mouseup',  ()=>document.body.classList.remove('cursor-click'));
+})();
+
+// ── HAPTIC FEEDBACK ───────────────────────────
+document.addEventListener('click', ()=>{
+  if(navigator.vibrate) navigator.vibrate(8);
+});
+
+// ── QUIET HOURS MODE ──────────────────────────
+(function(){
+  const QH_KEY = 'bulong_qh_dismissed';
+
+  function isQuietHours(){
+    const ph = new Date(Date.now() + 8*3600000); // PH time
+    const h  = ph.getUTCHours();
+    return h >= 22 || h < 6; // 10PM–6AM PH
+  }
+
+  function applyQuietUI(){
+    document.body.classList.add('quiet-hours');
+  }
+
+  function showQuietBanner(){
+    // Create banner if not exists
+    if(document.getElementById('quietHoursBanner')) return;
+    const b = document.createElement('div');
+    b.className = 'quiet-hours-banner';
+    b.id = 'quietHoursBanner';
+    b.innerHTML = `
+      <span class="qh-moon">🌙</span>
+      <div class="qh-title">Quiet hours</div>
+      <p class="qh-msg">It's late. You made it through today.<br>Whatever you're feeling right now — it's okay. You don't have to carry it alone.</p>
+      <button class="qh-close" id="qhClose">I'm here 🌿</button>
+    `;
+    document.getElementById('appShell').appendChild(b);
+    document.getElementById('qhClose').addEventListener('click',()=>{
+      b.classList.add('hidden');
+      sessionStorage.setItem(QH_KEY,'1');
+    });
+  }
+
+  // Check on launch and every 5 min
+  function checkQH(){
+    if(!isQuietHours()) return;
+    applyQuietUI();
+    if(!sessionStorage.getItem(QH_KEY)){
+      // Show banner after short delay to let app load
+      setTimeout(showQuietBanner, 2200);
+    }
+  }
+
+  // Hook into launchApp — run after app is ready
+  const _origUpdateNavProfile = window.updateNavProfile;
+  setTimeout(checkQH, 2500);
+  setInterval(checkQH, 300000);
+})();
+
+// ── KINIG MEMORY ──────────────────────────────
+(function(){
+  // Save last 3 Kinig conversations to Firebase per user
+  // Loads on app launch, saves after each exchange
+
+  const KINIG_SAVE_LIMIT = 6; // 3 exchanges = 6 messages
+
+  // Override sendKinig to also save after each message
+  const _origSendKinig = window.sendKinig;
+
+  async function saveKinigHistory(){
+    if(!window.currentUser) return;
+    try{
+      const toSave = kinigHistory.slice(-KINIG_SAVE_LIMIT);
+      await db.ref('kinigMemory/' + window.currentUser.uid).set({
+        history: toSave,
+        updatedAt: Date.now()
+      });
+    }catch(e){}
+  }
+
+  async function loadKinigHistory(){
+    if(!window.currentUser) return;
+    try{
+      const snap = await db.ref('kinigMemory/' + window.currentUser.uid).once('value');
+      const data = snap.val();
+      if(data && data.history && data.history.length){
+        kinigHistory = data.history;
+        // Show a soft "I remember" message
+        const msgs = document.getElementById('kinigMessages');
+        if(msgs){
+          const d = document.createElement('div');
+          d.className = 'kinig-msg bot';
+          d.innerHTML = '<p style="font-size:11.5px;opacity:0.6;font-style:italic">✦ I remember our last conversation. I\'m still here. 🌿</p>';
+          msgs.appendChild(d);
+        }
+      }
+    }catch(e){}
+  }
+
+  // Patch sendKinig to auto-save
+  const origSend = window.sendKinig;
+  window.sendKinigWithMemory = async function(){
+    const text = document.getElementById('kinigInput').value.trim();
+    if(!text) return;
+    // Call original logic inline (since sendKinig is defined in same scope, we trigger the event)
+    document.getElementById('kinigSend').dispatchEvent(new MouseEvent('click',{bubbles:false}));
+    setTimeout(saveKinigHistory, 2000);
+  };
+
+  // Load memory when app launches — hook via auth state change
+  window._loadKinigMemory = loadKinigHistory;
+
+  // Try loading after short delay to ensure currentUser is set
+  const waitForUser = setInterval(()=>{
+    if(window.currentUser){
+      clearInterval(waitForUser);
+      loadKinigHistory();
+    }
+  }, 500);
+})();
+
+// ── TIME FILTER ───────────────────────────────
+(function(){
+  const slider = document.getElementById('timeFilterSlider');
+  const label  = document.getElementById('timeFilterLabel');
+  if(!slider) return;
+
+  const OPTIONS = [
+    { label:'All time',  ms: null       },
+    { label:'Last 24h',  ms: 86400000   },
+    { label:'Last 6h',   ms: 21600000   },
+    { label:'Last 1h',   ms: 3600000    },
+    { label:'Last 15m',  ms: 900000     },
+  ];
+
+  let activeMs = null;
+
+  slider.addEventListener('input', function(){
+    const opt = OPTIONS[parseInt(this.value)];
+    label.textContent = opt.label;
+    activeMs = opt.ms;
+    applyTimeFilter();
+  });
+
+  function applyTimeFilter(){
+    // Re-render glows with time filter
+    if(!window.mapReady || !window.glowEl) return;
+    const now = Date.now();
+    window.glowEl.innerHTML = '';
+    Object.entries(window.confessions || {}).forEach(([key, c])=>{
+      if(window.activeMood !== 'all' && c.mood !== window.activeMood) return;
+      if(activeMs && (now - c.timestamp) > activeMs) return;
+      const pos = map.latLngToContainerPoint([c.lat, c.lng]);
+      const x = pos.x, y = pos.y;
+      if(x < -60 || y < -60 || x > innerWidth+60 || y > innerHeight+60) return;
+      const reacts = (c.reactions?.heart||0)+(c.reactions?.candle||0)+(c.reactions?.hug||0)+(c.reactions?.needed||0);
+      const sz = 16 + Math.min(reacts*1.5, 14);
+      const el = document.createElement('div');
+      el.className = 'confession-glow';
+      el.style.cssText = `left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${c.moodColor};box-shadow:0 0 ${sz}px ${sz/2}px ${c.moodColor}88,0 0 ${sz*2}px ${sz}px ${c.moodColor}33;animation-delay:${(Math.random()*2).toFixed(2)}s;`;
+      el.dataset.key = key;
+      el.addEventListener('click', e=>{ e.stopPropagation(); window.tryOpenPopup(key); });
+      window.glowEl.appendChild(el);
+    });
+  }
+
+  // Expose so renderGlows can respect time filter too
+  window.getTimeFilterMs = ()=> activeMs;
+})();
+
+// ── ZOOM TO MY LOCATION ───────────────────────
+document.getElementById('zoomMeBtn')?.addEventListener('click',()=>{
+  if(window.userLat !== null && window.map){
+    window.map.flyTo([window.userLat, window.userLng], 13, {duration: 1.4});
+    Sound.click();
+  } else {
+    navigator.geolocation?.getCurrentPosition(p=>{
+      window.userLat = p.coords.latitude;
+      window.userLng = p.coords.longitude;
+      window.map?.flyTo([window.userLat, window.userLng], 13, {duration:1.4});
+    }, ()=> showToast('Location not available 🌿'));
+  }
+});
+
+// ── EXPOSE GLOBALS FOR BATCH 1 HOOKS ─────────
+// Make key variables accessible to batch additions above
+Object.defineProperties(window, {
+  confessions:   { get:()=> confessions,   configurable:true },
+  activeMood:    { get:()=> activeMood,     configurable:true },
+  mapReady:      { get:()=> mapReady,       configurable:true },
+  glowEl:        { get:()=> glowEl,         configurable:true },
+  userLat:       { get:()=> userLat,        set:v=>{ userLat=v; }, configurable:true },
+  userLng:       { get:()=> userLng,        set:v=>{ userLng=v; }, configurable:true },
+  map:           { get:()=> map,            configurable:true },
+  currentUser:   { get:()=> currentUser,    configurable:true },
+  tryOpenPopup:  { get:()=> tryOpenPopup,   configurable:true },
+  kinigHistory:  { get:()=> kinigHistory,   set:v=>{ kinigHistory=v; }, configurable:true },
+});
+
+// Dismiss loader when launchApp runs
+const _origLaunchApp = launchApp;
+function launchApp(user, profile){
+  _origLaunchApp(user, profile);
+  if(window._dismissLoader) window._dismissLoader();
+}
