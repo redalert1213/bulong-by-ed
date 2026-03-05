@@ -553,34 +553,29 @@ function renderDashboard(){
   if(!currentUser)return;
   const myPosts=Object.entries(confessions).filter(([k,c])=>c.authorUid===currentUser.uid);
 
-  // Mood breakdown
+  // Mood breakdown — only show moods used
   const moodCounts={};
-  Object.values(MOOD_META).forEach((_,i)=>{ const k=Object.keys(MOOD_META)[i]; moodCounts[k]=0; });
+  Object.keys(MOOD_META).forEach(k=>{ moodCounts[k]=0; });
   myPosts.forEach(([k,c])=>{ if(moodCounts[c.mood]!==undefined) moodCounts[c.mood]++; });
   const maxCount=Math.max(...Object.values(moodCounts),1);
-  const barsEl=$('moodBars');barsEl.innerHTML='';
-  Object.entries(moodCounts).forEach(([mood,count])=>{
-    const meta=MOOD_META[mood];
-    const pct=Math.round((count/maxCount)*100);
-    barsEl.innerHTML+=`<div class="mood-bar-row">
-      <span class="mood-bar-label">${meta.emoji} ${mood}</span>
-      <div class="mood-bar-track"><div class="mood-bar-fill" style="width:${pct}%;background:${meta.color}"></div></div>
-      <span class="mood-bar-count">${count}</span>
-    </div>`;
-  });
+  const barsEl=$('moodBars');if(!barsEl)return;
+  barsEl.innerHTML='';
+  const usedMoods=Object.entries(moodCounts).filter(([m,c])=>c>0);
+  if(!usedMoods.length){ barsEl.innerHTML='<p class="dash-empty" style="font-size:12px">No mood data yet 🌿</p>'; }
+  else { usedMoods.forEach(([mood,count])=>{ const meta=MOOD_META[mood];const pct=Math.round((count/maxCount)*100);barsEl.innerHTML+=`<div class="mood-bar-row"><span class="mood-bar-label">${meta.emoji} ${mood}</span><div class="mood-bar-track"><div class="mood-bar-fill" style="width:${pct}%;background:${meta.color}"></div></div><span class="mood-bar-count">${count}</span></div>`; }); }
 
   // My posts list
-  const postsEl=$('myPostsList');postsEl.innerHTML='';
-  if(!myPosts.length){postsEl.innerHTML='<p class="dash-empty">No whispers yet. Your first one is waiting. 🌿</p>';return;}
+  const postsEl=$('myPostsList');if(!postsEl)return;
+  postsEl.innerHTML='';
+  if(!myPosts.length){postsEl.innerHTML='<p class="dash-empty">Your first whisper is waiting. 🌿</p>';return;}
   myPosts.sort((a,b)=>b[1].timestamp-a[1].timestamp).forEach(([key,c])=>{
     const r=c.reactions||{};const total=(r.heart||0)+(r.candle||0)+(r.hug||0)+(r.needed||0);
     const replies=c.replies?Object.values(c.replies).length:0;
     const div=document.createElement('div');div.className='my-post-item';
-    div.innerHTML=`<div class="my-post-mood"><div class="my-post-dot" style="background:${c.moodColor}"></div><span class="my-post-mood-name">${c.mood}</span><span class="my-post-time">${timeAgo(c.timestamp)}</span></div><div class="my-post-text">${escHtml(c.content||'📷 Media whisper')}</div><div class="my-post-stats"><span>🤍 ${total} reactions</span><span>💬 ${replies} replies</span><span>⏳ fades ${expiryLabel(c.expiresAt)}</span></div>`;
-    div.onclick=()=>{closePanel('dashboardPanel');tryOpenPopup(key);};
+    div.innerHTML=`<div class="my-post-mood"><div class="my-post-dot" style="background:${c.moodColor}"></div><span class="my-post-mood-name">${c.mood}</span><span class="my-post-time">${timeAgo(c.timestamp)}</span></div><div class="my-post-text">${escHtml(c.content||'📷 Media whisper')}</div><div class="my-post-stats"><span>🤍 ${total}</span><span>💬 ${replies}</span><span>⏳ ${expiryLabel(c.expiresAt)}</span></div>`;
+    div.onclick=()=>{closePanel('profilePanel');tryOpenPopup(key);};
     postsEl.appendChild(div);
   });
-  // Stats
   let totalR=0;myPosts.forEach(([k,c])=>totalR+=totalReacts(c));
   $('statPosts').textContent=myPosts.length;
   $('statReactions').textContent=totalR;
@@ -590,16 +585,12 @@ function renderDashboard(){
 const backdrop=$('panelBackdrop');
 function openPanel(id){$(id).classList.add('open');backdrop.classList.add('active');}
 function closePanel(id){$(id).classList.remove('open');if(!document.querySelector('.side-panel.open'))backdrop.classList.remove('active');}
-backdrop.addEventListener('click',()=>{['profilePanel','notifPanel','dashboardPanel','safetyPanel'].forEach(closePanel);backdrop.classList.remove('active');});
+backdrop.addEventListener('click',()=>{['profilePanel','notifPanel'].forEach(closePanel);backdrop.classList.remove('active');});
 
-$('profileBtn').addEventListener('click',()=>{loadProfilePanel();openPanel('profilePanel');});
+$('profileBtn').addEventListener('click',()=>{loadProfilePanel();renderDashboard();openPanel('profilePanel');});
 $('profileClose').addEventListener('click',()=>closePanel('profilePanel'));
 $('notifBtn').addEventListener('click',()=>{renderNotifList();openPanel('notifPanel');});
 $('notifClose').addEventListener('click',()=>closePanel('notifPanel'));
-$('dashboardBtn').addEventListener('click',()=>{renderDashboard();openPanel('dashboardPanel');});
-$('dashboardClose').addEventListener('click',()=>closePanel('dashboardPanel'));
-$('safetyBtn').addEventListener('click',()=>openPanel('safetyPanel'));
-$('safetyClose').addEventListener('click',()=>closePanel('safetyPanel'));
 
 function loadProfilePanel(){
   if(!userProfile)return;
