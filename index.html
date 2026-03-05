@@ -169,12 +169,34 @@
   <div id="map"></div>
   <div id="glowContainer"></div>
 
+  <!-- CONSTELLATION CANVAS (on top of map) -->
+  <canvas id="constellationCanvas" style="position:fixed;inset:0;top:94px;pointer-events:none;z-index:3;opacity:0.55;"></canvas>
+
+  <!-- MOOD LIVE COUNTER -->
+  <div class="mood-live-counter" id="moodLiveCounter">
+    <div class="mlc-title">🌍 Live moods</div>
+    <div class="mlc-list" id="mlcList"></div>
+  </div>
+
   <!-- PROFILE PANEL -->
   <div class="side-panel" id="profilePanel">
     <div class="side-panel-inner">
       <button class="side-close" id="profileClose">✕</button>
       <h3 class="side-title">Your presence</h3>
-      <div class="profile-avatar-preview" id="profileAvatarPreview"><span id="profileAvatarInitial">?</span></div>
+
+      <!-- Avatar section with upload -->
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar-preview" id="profileAvatarPreview">
+          <img id="profileAvatarImg" class="avatar-img hidden" alt="Profile"/>
+          <span id="profileAvatarInitial">?</span>
+        </div>
+        <div class="avatar-actions">
+          <button class="avatar-upload-btn" id="avatarUploadBtn">📷 Change photo</button>
+          <button class="avatar-remove-btn hidden" id="avatarRemoveBtn">✕ Remove</button>
+          <input type="file" id="avatarFile" accept="image/*" style="display:none"/>
+        </div>
+      </div>
+
       <div class="profile-field">
         <label class="field-label">Display name</label>
         <input class="field-input" id="profileNameInput" type="text" maxlength="30" />
@@ -488,6 +510,7 @@
         <button class="react-btn" data-react="candle" title="Lighting a candle">🕯 <span class="react-count" id="candleCount">0</span></button>
         <button class="react-btn" data-react="hug"    title="Virtual hug">🫂 <span class="react-count" id="hugCount">0</span></button>
         <button class="react-btn" data-react="needed" title="I needed to read this">🫶 <span class="react-count" id="neededCount">0</span></button>
+        <button class="react-btn delete-btn hidden" id="deleteWhisperBtn" title="Delete your whisper">🗑</button>
       </div>
       <div class="reply-section">
         <div class="replies-list" id="repliesList"></div>
