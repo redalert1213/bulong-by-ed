@@ -137,19 +137,7 @@
         </svg>
         <span class="notif-badge hidden" id="notifBadge">0</span>
       </button>
-      <!-- Dashboard button -->
-      <button class="nav-icon-btn" id="dashboardBtn" title="My whispers">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-        </svg>
-      </button>
-      <!-- Safety button -->
-      <button class="nav-icon-btn" id="safetyBtn" title="Safety & Privacy">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-      </button>
+
       <button class="btn-confess" id="openConfessBtn">+ Whisper</button>
       <button class="night-toggle" id="nightToggle" title="Toggle light mode"><span class="night-icon">☀️</span></button>
     </div>
@@ -209,6 +197,41 @@
         <div class="stat-item"><span class="stat-num" id="statReactions">0</span><span class="stat-label">Reactions</span></div>
       </div>
       <button class="btn-save-profile" id="saveProfileBtn">Save presence</button>
+
+      <!-- MY WHISPERS inside profile panel -->
+      <div class="profile-section-divider">
+        <span>My whispers</span>
+      </div>
+      <div class="dash-section">
+        <div class="mood-bars" id="moodBars"></div>
+      </div>
+      <div class="my-posts-list" id="myPostsList"></div>
+
+      <!-- SAFETY inside profile panel -->
+      <div class="profile-section-divider">
+        <span>Safety & Privacy</span>
+      </div>
+      <div class="safety-block">
+        <div class="safety-icon">🛡</div>
+        <div class="safety-block-title">Your privacy</div>
+        <p class="safety-block-body">Bulong does not sell your data. Your Google account is used only to identify you across sessions. You can post anonymously at any time.</p>
+      </div>
+      <div class="safety-block">
+        <div class="safety-icon">🌿</div>
+        <div class="safety-block-title">Community guidelines</div>
+        <p class="safety-block-body">Be the kind of stranger you'd want to find your whisper. Posts that target or harass others will be removed.</p>
+      </div>
+      <div class="safety-block crisis">
+        <div class="safety-icon">📞</div>
+        <div class="safety-block-title">Crisis resources</div>
+        <div class="crisis-lines">
+          <div class="crisis-item"><span class="crisis-name">HOPELINE PH</span><span class="crisis-num">02-8804-4673</span></div>
+          <div class="crisis-item"><span class="crisis-name">HOPELINE SMS</span><span class="crisis-num">0917-558-4673</span></div>
+          <div class="crisis-item"><span class="crisis-name">In Touch</span><span class="crisis-num">02-8893-7603</span></div>
+          <div class="crisis-item"><span class="crisis-name">24/7</span><span class="crisis-num">Free · Confidential</span></div>
+        </div>
+      </div>
+
       <button class="btn-signout" id="signOutBtn">Sign out</button>
     </div>
   </div>
