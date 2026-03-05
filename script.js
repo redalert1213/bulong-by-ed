@@ -445,6 +445,10 @@ function openPopup(key){
     if(vid){const f=document.createElement('iframe');f.src=`https://www.youtube.com/embed/${vid}`;f.allow='accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture';f.allowFullscreen=true;med.appendChild(f);}
   } else if(c.mediaType==='tiktok'){
     const a=document.createElement('a');a.href=c.mediaUrl;a.target='_blank';a.rel='noopener noreferrer';a.className='tiktok-link';a.innerHTML='<span style="font-size:20px">🎵</span><span>Open TikTok →</span>';med.appendChild(a);
+  } else if(c.mediaType==='voice'){
+    const au=document.createElement('audio');au.src=c.mediaUrl;au.controls=true;au.style.cssText='width:100%;border-radius:8px;margin:8px 0;';med.appendChild(au);
+  } else if(c.mediaType==='doodle'){
+    const img=document.createElement('img');img.src=c.mediaUrl;img.alt='Doodle whisper';img.style.cssText='width:100%;border-radius:10px;';med.appendChild(img);
   }
   const r=c.reactions||{};
   $('heartCount').textContent=r.heart||0;$('candleCount').textContent=r.candle||0;$('hugCount').textContent=r.hug||0;$('neededCount').textContent=r.needed||0;
@@ -584,7 +588,9 @@ function updatePostedAs(){
 document.querySelectorAll('.type-tab').forEach(btn=>btn.addEventListener('click',()=>{
   document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');selectedType=btn.dataset.type;
-  ['message','photo','video','youtube','tiktok'].forEach(t=>$(t+'Section').classList.toggle('hidden',t!==selectedType));
+  ['message','photo','video','youtube','tiktok','voice','doodle'].forEach(t=>{
+    const el=$(t+'Section'); if(el) el.classList.toggle('hidden',t!==selectedType);
+  });
 }));
 document.querySelectorAll('.expiry-btn').forEach(btn=>btn.addEventListener('click',()=>{
   document.querySelectorAll('.expiry-btn').forEach(b=>b.classList.remove('active'));
@@ -639,6 +645,15 @@ async function submitConfession(){
     if(!mediaUrl){showToast('I-paste ang TikTok link');return;}
     if(!mediaUrl.includes('tiktok')){showToast('Hindi TikTok link yan');return;}
     mediaType='tiktok';content=$('tiktokCaption').value.trim()||'Shared a TikTok 🎵';
+  } else if(selectedType==='voice'){
+    const vb64=window._getVoiceBase64?.();
+    if(!vb64){showToast('I-record muna ang voice note 🎙');return;}
+    content=$('voiceCaption')?.value.trim()||'🎙 Shared a voice note';
+    mediaType='voice'; mediaUrl=vb64;
+  } else if(selectedType==='doodle'){
+    mediaType='doodle';
+    mediaUrl=window._getDoodleBase64?.()||'';
+    content=$('doodleCaption')?.value.trim()||'🎨 Shared a doodle';
   }
 
   // Upload media if needed
@@ -983,24 +998,32 @@ $('enterBulongBtn').addEventListener('click',async()=>{
 
 // ── AUTH STATE ────────────────────────────────
 auth.onAuthStateChanged(async user=>{
-  if(!user){$('appShell').classList.add('hidden');$('welcomeScreen').style.display='flex';return;}
+  if(!user){
+    $('appShell').classList.add('hidden');
+    $('welcomeScreen').style.display='flex';
+    if(window._dismissLoader) window._dismissLoader();
+    return;
+  }
   const snap=await db.ref('users/'+user.uid).once('value');
   const profile=snap.val();
-  if(!profile){showNameSetup(user);}
-  else{$('welcomeScreen').style.display='none';$('nameSetupScreen').classList.remove('open');launchApp(user,profile);}
+  if(!profile){ showNameSetup(user); if(window._dismissLoader) window._dismissLoader(); }
+  else{ $('welcomeScreen').style.display='none'; $('nameSetupScreen').classList.remove('open'); launchApp(user,profile); }
 });
 
 // ── LAUNCH APP ────────────────────────────────
 function launchApp(user,profile){
-  currentUser=user;userProfile=profile;
+  currentUser=user; userProfile=profile;
+  // iOS-safe: don't rely on CSS transitions for display toggling
   const ws=$('welcomeScreen');
-  if(ws&&ws.style.display!=='none'){
-    fadeOut(ws,()=>{ $('appShell').classList.remove('hidden'); updateNavProfile();updateLimitUI();initMap();listenNotifs(); setTimeout(()=>{showToast('Welcome to Bulong. You are safe here. 🌿');Sound.welcome();},600); });
-  } else {
-    $('appShell').classList.remove('hidden');
-    updateNavProfile();updateLimitUI();initMap();listenNotifs();
-    setTimeout(()=>{showToast('Welcome to Bulong. You are safe here. 🌿');Sound.welcome();},600);
-  }
+  if(ws) ws.style.display='none';
+  const ns=$('nameSetupScreen');
+  if(ns){ ns.classList.remove('open'); ns.style.display='none'; }
+  const app=$('appShell');
+  app.classList.remove('hidden');
+  app.style.display='';
+  updateNavProfile(); updateLimitUI(); initMap(); listenNotifs();
+  if(window._dismissLoader) window._dismissLoader();
+  setTimeout(()=>{ showToast('Welcome to Bulong. You are safe here. 🌿'); Sound.welcome(); }, 800);
 }
 
 /* ══════════════════════════════════════════════
@@ -1160,10 +1183,10 @@ document.addEventListener('click', ()=>{
   const _origSendKinig = window.sendKinig;
 
   async function saveKinigHistory(){
-    if(!window.currentUser) return;
+    if(!currentUser) return;
     try{
       const toSave = kinigHistory.slice(-KINIG_SAVE_LIMIT);
-      await db.ref('kinigMemory/' + window.currentUser.uid).set({
+      await db.ref('kinigMemory/' + currentUser.uid).set({
         history: toSave,
         updatedAt: Date.now()
       });
@@ -1171,13 +1194,12 @@ document.addEventListener('click', ()=>{
   }
 
   async function loadKinigHistory(){
-    if(!window.currentUser) return;
+    if(!currentUser) return;
     try{
-      const snap = await db.ref('kinigMemory/' + window.currentUser.uid).once('value');
+      const snap = await db.ref('kinigMemory/' + currentUser.uid).once('value');
       const data = snap.val();
       if(data && data.history && data.history.length){
         kinigHistory = data.history;
-        // Show a soft "I remember" message
         const msgs = document.getElementById('kinigMessages');
         if(msgs){
           const d = document.createElement('div');
@@ -1235,12 +1257,11 @@ document.addEventListener('click', ()=>{
   });
 
   function applyTimeFilter(){
-    // Re-render glows with time filter
-    if(!window.mapReady || !window.glowEl) return;
+    if(!mapReady || !glowEl) return;
     const now = Date.now();
-    window.glowEl.innerHTML = '';
-    Object.entries(window.confessions || {}).forEach(([key, c])=>{
-      if(window.activeMood !== 'all' && c.mood !== window.activeMood) return;
+    glowEl.innerHTML = '';
+    Object.entries(confessions || {}).forEach(([key, c])=>{
+      if(activeMood !== 'all' && c.mood !== activeMood) return;
       if(activeMs && (now - c.timestamp) > activeMs) return;
       const pos = map.latLngToContainerPoint([c.lat, c.lng]);
       const x = pos.x, y = pos.y;
@@ -1251,8 +1272,8 @@ document.addEventListener('click', ()=>{
       el.className = 'confession-glow';
       el.style.cssText = `left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${c.moodColor};box-shadow:0 0 ${sz}px ${sz/2}px ${c.moodColor}88,0 0 ${sz*2}px ${sz}px ${c.moodColor}33;animation-delay:${(Math.random()*2).toFixed(2)}s;`;
       el.dataset.key = key;
-      el.addEventListener('click', e=>{ e.stopPropagation(); window.tryOpenPopup(key); });
-      window.glowEl.appendChild(el);
+      el.addEventListener('click', e=>{ e.stopPropagation(); tryOpenPopup(key); });
+      glowEl.appendChild(el);
     });
   }
 
@@ -1262,36 +1283,228 @@ document.addEventListener('click', ()=>{
 
 // ── ZOOM TO MY LOCATION ───────────────────────
 document.getElementById('zoomMeBtn')?.addEventListener('click',()=>{
-  if(window.userLat !== null && window.map){
-    window.map.flyTo([window.userLat, window.userLng], 13, {duration: 1.4});
+  if(userLat !== null && map){
+    map.flyTo([userLat, userLng], 13, {duration: 1.4});
     Sound.click();
   } else {
     navigator.geolocation?.getCurrentPosition(p=>{
-      window.userLat = p.coords.latitude;
-      window.userLng = p.coords.longitude;
-      window.map?.flyTo([window.userLat, window.userLng], 13, {duration:1.4});
+      userLat = p.coords.latitude;
+      userLng = p.coords.longitude;
+      map?.flyTo([userLat, userLng], 13, {duration:1.4});
     }, ()=> showToast('Location not available 🌿'));
   }
 });
 
-// ── EXPOSE GLOBALS FOR BATCH 1 HOOKS ─────────
-// Make key variables accessible to batch additions above
-Object.defineProperties(window, {
-  confessions:   { get:()=> confessions,   configurable:true },
-  activeMood:    { get:()=> activeMood,     configurable:true },
-  mapReady:      { get:()=> mapReady,       configurable:true },
-  glowEl:        { get:()=> glowEl,         configurable:true },
-  userLat:       { get:()=> userLat,        set:v=>{ userLat=v; }, configurable:true },
-  userLng:       { get:()=> userLng,        set:v=>{ userLng=v; }, configurable:true },
-  map:           { get:()=> map,            configurable:true },
-  currentUser:   { get:()=> currentUser,    configurable:true },
-  tryOpenPopup:  { get:()=> tryOpenPopup,   configurable:true },
-  kinigHistory:  { get:()=> kinigHistory,   set:v=>{ kinigHistory=v; }, configurable:true },
-});
+/* ══════════════════════════════════════════════
+   BATCH 2 — NEW FEATURES
+   ══════════════════════════════════════════════ */
 
-// Dismiss loader when launchApp runs
-const _origLaunchApp = launchApp;
-function launchApp(user, profile){
-  _origLaunchApp(user, profile);
-  if(window._dismissLoader) window._dismissLoader();
-}
+// ── VOICE NOTE ────────────────────────────────
+(function(){
+  let mediaRecorder=null, chunks=[], voiceBlob=null, voiceBase64=null;
+  let timerInt=null, elapsed=0;
+  const MAX_SECS=30;
+
+  const recordBtn=$('voiceRecordBtn');
+  const playBtn=$('voicePlayBtn');
+  const clearBtn=$('voiceClearBtn');
+  const bars=$('voiceBars');
+  const timer=$('voiceTimer');
+  const audio=$('voiceAudioPreview');
+  if(!recordBtn) return;
+
+  function fmt(s){ return `0:${String(Math.floor(s)).padStart(2,'0')}`; }
+
+  function startRecording(){
+    if(!navigator.mediaDevices?.getUserMedia){ showToast('Microphone not supported on this device'); return; }
+    navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+      chunks=[];
+      mediaRecorder=new MediaRecorder(stream);
+      mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+      mediaRecorder.onstop=()=>{
+        voiceBlob=new Blob(chunks,{type:'audio/webm'});
+        const reader=new FileReader();
+        reader.onload=e=>{ voiceBase64=e.target.result; };
+        reader.readAsDataURL(voiceBlob);
+        audio.src=URL.createObjectURL(voiceBlob);
+        playBtn.classList.remove('hidden');
+        clearBtn.classList.remove('hidden');
+        recordBtn.textContent='🎙 Record again';
+        recordBtn.classList.remove('recording');
+        bars.classList.remove('recording');
+        clearInterval(timerInt);
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      mediaRecorder.start();
+      elapsed=0;
+      recordBtn.textContent='⏹ Stop recording';
+      recordBtn.classList.add('recording');
+      bars.classList.add('recording');
+      timerInt=setInterval(()=>{
+        elapsed++;
+        timer.textContent=`${fmt(elapsed)} / ${fmt(MAX_SECS)}`;
+        if(elapsed>=MAX_SECS){ mediaRecorder.stop(); clearInterval(timerInt); }
+      },1000);
+    }).catch(()=>showToast('Microphone access denied 🎙'));
+  }
+
+  function stopRecording(){
+    if(mediaRecorder&&mediaRecorder.state==='recording'){ mediaRecorder.stop(); clearInterval(timerInt); }
+  }
+
+  recordBtn.addEventListener('click',()=>{
+    if(mediaRecorder&&mediaRecorder.state==='recording'){ stopRecording(); }
+    else { startRecording(); }
+  });
+
+  playBtn.addEventListener('click',()=>{ audio.paused?audio.play():audio.pause(); });
+  clearBtn.addEventListener('click',()=>{
+    voiceBlob=null; voiceBase64=null; audio.src='';
+    playBtn.classList.add('hidden'); clearBtn.classList.add('hidden');
+    recordBtn.textContent='🎙 Hold to record';
+    bars.classList.remove('recording');
+    timer.textContent='0:00 / 0:30'; elapsed=0;
+  });
+
+  // Expose for submission
+  window._getVoiceBase64=()=>voiceBase64;
+  window._clearVoice=()=>clearBtn.click();
+})();
+
+// ── DOODLE CANVAS ─────────────────────────────
+(function(){
+  const canvas=$('doodleCanvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  let drawing=false, color='#84A98C', brushSz=4, erasing=false;
+
+  // Set canvas actual size
+  function resizeCanvas(){
+    const w=canvas.offsetWidth;
+    const h=220;
+    if(canvas.width!==w||canvas.height!==h){
+      const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      canvas.width=w; canvas.height=h;
+      ctx.fillStyle='#0F1518'; ctx.fillRect(0,0,w,h);
+      ctx.putImageData(img,0,0);
+    }
+  }
+
+  function getPos(e){
+    const r=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/r.width;
+    const scaleY=canvas.height/r.height;
+    const src=e.touches?e.touches[0]:e;
+    return{x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY};
+  }
+
+  function draw(e){
+    if(!drawing) return;
+    e.preventDefault();
+    const{x,y}=getPos(e);
+    ctx.lineWidth=brushSz;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    ctx.strokeStyle=erasing?'#0F1518':color;
+    ctx.lineTo(x,y);
+    ctx.stroke();
+  }
+
+  function startDraw(e){ e.preventDefault(); resizeCanvas(); drawing=true; ctx.beginPath(); const{x,y}=getPos(e); ctx.moveTo(x,y); }
+  function endDraw(){ drawing=false; }
+
+  canvas.addEventListener('mousedown',startDraw);
+  canvas.addEventListener('mousemove',draw);
+  canvas.addEventListener('mouseup',endDraw);
+  canvas.addEventListener('mouseleave',endDraw);
+  canvas.addEventListener('touchstart',startDraw,{passive:false});
+  canvas.addEventListener('touchmove',draw,{passive:false});
+  canvas.addEventListener('touchend',endDraw);
+
+  // Color picker
+  document.querySelectorAll('.doodle-color').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.doodle-color').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      color=btn.dataset.color; erasing=false;
+      $('doodleErase').classList.remove('active');
+    });
+  });
+
+  $('brushSize')?.addEventListener('input',function(){ brushSz=parseInt(this.value); });
+  $('doodleErase')?.addEventListener('click',function(){
+    erasing=!erasing;
+    this.classList.toggle('active',erasing);
+  });
+  $('doodleClear')?.addEventListener('click',()=>{ ctx.fillStyle='#0F1518'; ctx.fillRect(0,0,canvas.width,canvas.height); });
+
+  // Init background
+  setTimeout(()=>{ resizeCanvas(); },100);
+
+  // Expose for submission
+  window._getDoodleBase64=()=>canvas.toDataURL('image/png');
+  window._clearDoodle=()=>$('doodleClear')?.click();
+})();
+
+// ── CUSTOM MOOD COLOR ─────────────────────────
+(function(){
+  const customBtn=$('customMoodBtn');
+  const colorRow=$('customColorRow');
+  const colorInput=$('customMoodColor');
+  if(!customBtn) return;
+
+  customBtn.addEventListener('click',()=>{
+    colorRow.classList.toggle('hidden');
+  });
+
+  colorInput?.addEventListener('input',function(){
+    customBtn.style.setProperty('--custom-mood-color', this.value);
+    customBtn.dataset.color=this.value;
+    // Update selMood if custom is active
+    if(selMood.name==='custom'){ selMood={name:'custom',color:this.value}; customBtn.dataset.color=this.value; }
+  });
+
+  // Wire into mood-btn click handler — patch selMood for custom
+  customBtn.addEventListener('click',()=>{
+    selMood={name:'custom', color:colorInput?.value||'#84A98C'};
+  });
+})();
+
+// ── WHISPER CARD THEMES ───────────────────────
+(function(){
+  const THEMES={
+    grief:'theme-grief', hope:'theme-hope', love:'theme-love',
+    melancholy:'theme-melancholy', longing:'theme-longing', relief:'theme-relief'
+  };
+  // Patch openPopup to apply theme
+  const _origOpenPopup=openPopup;
+  window.openPopup=function(key){
+    _origOpenPopup(key);
+    const c=confessions[key];
+    if(!c) return;
+    const card=document.querySelector('.popup-card');
+    if(!card) return;
+    Object.values(THEMES).forEach(t=>card.classList.remove(t));
+    if(THEMES[c.mood]) card.classList.add(THEMES[c.mood]);
+  };
+})();
+
+// ── VOICE + DOODLE SUBMISSION INTEGRATION ─────
+// Patch submitConfession to handle voice and doodle types
+(function(){
+  const origSubmit=$('submitConfession');
+  if(!origSubmit) return;
+
+  // Hook into type selection to track voice/doodle
+  document.querySelectorAll('.type-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      // Show/hide sections — reuse existing logic but add voice+doodle
+      const type=tab.dataset.type;
+      ['messageSection','photoSection','videoSection','youtubeSection','tiktokSection','voiceSection','doodleSection']
+        .forEach(id=>{ const el=$(id); if(el) el.classList.add('hidden'); });
+      const map2={message:'messageSection',photo:'photoSection',video:'videoSection',youtube:'youtubeSection',tiktok:'tiktokSection',voice:'voiceSection',doodle:'doodleSection'};
+      const sec=$(map2[type]);
+      if(sec) sec.classList.remove('hidden');
+    });
+  });
+})();
