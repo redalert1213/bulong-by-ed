@@ -893,83 +893,134 @@ function updateNavProfile(){
 
 // ── KINIG ─────────────────────────────────────
 // ── KINIG BUTTON — draggable + minimizable ────
-(function(){
-  const btn = $('kinigBtn');
+// Runs after DOM ready via setTimeout to ensure element exists on iOS
+setTimeout(function(){
+  const btn = document.getElementById('kinigBtn');
+  const chat = document.getElementById('kinigChat');
   if(!btn) return;
-  let isDragging=false, hasDragged=false;
-  let startX=0,startY=0,origX=0,origY=0;
-  const isMobile = ()=>window.matchMedia('(pointer:coarse)').matches || window.innerWidth<=600;
 
-  // On mobile: start minimized
-  if(isMobile()) btn.classList.add('minimized');
+  let isDragging = false;
+  let didDrag    = false;
+  let startTouchX = 0, startTouchY = 0;
+  let startBtnX   = 0, startBtnY   = 0;
 
-  function getCoords(e){ return e.touches ? {x:e.touches[0].clientX,y:e.touches[0].clientY} : {x:e.clientX,y:e.clientY}; }
+  function isMobileDevice(){
+    return window.innerWidth <= 768 || ('ontouchstart' in window);
+  }
 
-  function onStart(e){
-    const {x,y}=getCoords(e);
-    startX=x; startY=y;
-    const r=btn.getBoundingClientRect();
-    origX=r.left; origY=r.top;
-    isDragging=true; hasDragged=false;
+  // Start minimized on mobile
+  if(isMobileDevice()){
+    btn.classList.add('minimized');
+    // Position bottom-right safely
+    btn.style.bottom = '24px';
+    btn.style.right  = '16px';
+    btn.style.top    = 'auto';
+    btn.style.left   = 'auto';
+  }
+
+  function getClientXY(e){
+    if(e.touches && e.touches.length > 0){
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  }
+
+  function onPointerDown(e){
+    const {x, y} = getClientXY(e);
+    startTouchX = x;
+    startTouchY = y;
+    const rect = btn.getBoundingClientRect();
+    startBtnX = rect.left;
+    startBtnY = rect.top;
+    isDragging = true;
+    didDrag = false;
     btn.classList.add('dragging');
-    e.preventDefault();
+    // Don't preventDefault here — let iOS register the touch
   }
 
-  function onMove(e){
+  function onPointerMove(e){
     if(!isDragging) return;
-    const {x,y}=getCoords(e);
-    const dx=x-startX, dy=y-startY;
-    if(Math.abs(dx)>5||Math.abs(dy)>5) hasDragged=true;
-    if(!hasDragged) return;
-    const nx=Math.max(8,Math.min(window.innerWidth-btn.offsetWidth-8, origX+dx));
-    const ny=Math.max(8,Math.min(window.innerHeight-btn.offsetHeight-8, origY+dy));
-    btn.style.left=nx+'px'; btn.style.top=ny+'px';
-    btn.style.right='auto'; btn.style.bottom='auto';
-    e.preventDefault();
+    const {x, y} = getClientXY(e);
+    const dx = x - startTouchX;
+    const dy = y - startTouchY;
+    if(Math.abs(dx) > 8 || Math.abs(dy) > 8){
+      didDrag = true;
+    }
+    if(!didDrag) return;
+    e.preventDefault(); // only prevent scroll when actually dragging
+    const newX = Math.max(8, Math.min(window.innerWidth  - btn.offsetWidth  - 8, startBtnX + dx));
+    const newY = Math.max(8, Math.min(window.innerHeight - btn.offsetHeight - 8, startBtnY + dy));
+    btn.style.left   = newX + 'px';
+    btn.style.top    = newY + 'px';
+    btn.style.right  = 'auto';
+    btn.style.bottom = 'auto';
   }
 
-  function onEnd(e){
+  function onPointerUp(e){
     if(!isDragging) return;
-    isDragging=false;
+    isDragging = false;
     btn.classList.remove('dragging');
-    if(!hasDragged){
-      // It was a tap/click — handle open/minimize
-      if(isMobile() && btn.classList.contains('minimized')){
-        // First tap on mobile expands it
+
+    if(!didDrag){
+      // Pure tap — handle click logic
+      if(isMobileDevice() && btn.classList.contains('minimized')){
         btn.classList.remove('minimized');
       } else {
-        kinigOpen=!kinigOpen;
-        $('kinigChat').classList.toggle('open',kinigOpen);
-        if(kinigOpen){$('kinigInput').focus();$('kinigMessages').scrollTop=9999;}
+        kinigOpen = !kinigOpen;
+        chat.classList.toggle('open', kinigOpen);
+        if(kinigOpen){
+          document.getElementById('kinigInput').focus();
+          document.getElementById('kinigMessages').scrollTop = 9999;
+        }
+      }
+    } else {
+      // After drag — snap to nearest edge on mobile
+      if(isMobileDevice()){
+        const rect = btn.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const snapToRight = cx > window.innerWidth / 2;
+        const finalY = Math.max(8, Math.min(window.innerHeight - btn.offsetHeight - 8, rect.top));
+        btn.style.top    = finalY + 'px';
+        btn.style.left   = snapToRight ? (window.innerWidth - btn.offsetWidth - 12) + 'px' : '12px';
+        btn.style.right  = 'auto';
+        btn.style.bottom = 'auto';
       }
     }
-    // Snap to nearest edge on mobile
-    if(isMobile() && hasDragged){
-      const r=btn.getBoundingClientRect();
-      const cx=r.left+r.width/2;
-      const snapRight=cx > window.innerWidth/2;
-      const ny=Math.max(8,Math.min(window.innerHeight-btn.offsetHeight-8, r.top));
-      btn.style.top=ny+'px';
-      btn.style.left=snapRight?(window.innerWidth-btn.offsetWidth-12)+'px':'12px';
-      btn.style.right='auto'; btn.style.bottom='auto';
-    }
-    hasDragged=false;
+    didDrag = false;
   }
 
-  // Long press on mobile to re-minimize
-  let pressTimer=null;
-  btn.addEventListener('touchstart',e=>{
-    pressTimer=setTimeout(()=>{
-      if(!isDragging){ btn.classList.add('minimized'); pressTimer=null; }
-    },600);
-    onStart(e);
-  },{passive:false});
-  btn.addEventListener('touchmove',e=>{ clearTimeout(pressTimer); onMove(e); },{passive:false});
-  btn.addEventListener('touchend',e=>{ clearTimeout(pressTimer); onEnd(e); });
-  btn.addEventListener('mousedown',onStart);
-  window.addEventListener('mousemove',onMove);
-  window.addEventListener('mouseup',onEnd);
-})();
+  // Long press to re-minimize (mobile)
+  let longPressTimer = null;
+  btn.addEventListener('touchstart', function(e){
+    onPointerDown(e);
+    longPressTimer = setTimeout(function(){
+      if(!didDrag){
+        btn.classList.add('minimized');
+        // Reset to bottom-right
+        btn.style.bottom = '24px';
+        btn.style.right  = '16px';
+        btn.style.top    = 'auto';
+        btn.style.left   = 'auto';
+      }
+    }, 700);
+  }, {passive: true}); // passive:true for iOS scroll compat
+
+  btn.addEventListener('touchmove', function(e){
+    clearTimeout(longPressTimer);
+    onPointerMove(e);
+  }, {passive: false});
+
+  btn.addEventListener('touchend', function(e){
+    clearTimeout(longPressTimer);
+    onPointerUp(e);
+  });
+
+  // Desktop mouse drag
+  btn.addEventListener('mousedown', onPointerDown);
+  document.addEventListener('mousemove', onPointerMove);
+  document.addEventListener('mouseup', onPointerUp);
+
+}, 300); // 300ms after script runs — ensures DOM + layout ready on iOS
 
 $('kinigClose').addEventListener('click',()=>{kinigOpen=false;$('kinigChat').classList.remove('open');});
 $('kinigSend').addEventListener('click',sendKinig);
