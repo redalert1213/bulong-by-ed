@@ -363,8 +363,13 @@ body.light #constellationCanvas{opacity:0.25;mix-blend-mode:multiply;}
 .reply-send:hover{background:var(--mauve);}
 
 /* ── KINIG ────────────────────────────────── */
-.kinig-btn{position:fixed;bottom:24px;right:22px;z-index:850;background:var(--glass);backdrop-filter:blur(16px);border:1.5px solid rgba(201,168,196,0.35);border-radius:22px;padding:8px 14px 8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(201,168,196,0.2);transition:all 0.25s;}
-.kinig-btn:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(201,168,196,0.3);}
+.kinig-btn{position:fixed;bottom:24px;right:22px;z-index:850;background:var(--glass);backdrop-filter:blur(16px);border:1.5px solid rgba(201,168,196,0.35);border-radius:22px;padding:8px 14px 8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(201,168,196,0.2);transition:box-shadow 0.25s,border-color 0.25s;}
+.kinig-btn:hover{box-shadow:0 12px 36px rgba(201,168,196,0.3);}
+/* Mobile: minimized pill state */
+.kinig-btn.minimized{width:44px;height:44px;padding:0;border-radius:50%;justify-content:center;overflow:hidden;}
+.kinig-btn.minimized .kinig-label,.kinig-btn.minimized .kinig-badge{display:none;}
+.kinig-btn.minimized .kinig-face{margin:0;}
+.kinig-btn.dragging{transition:none;opacity:0.85;}
 .kinig-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#1e3040,var(--mauve));display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .kinig-face{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .kinig-face.small .kinig-eye{width:4px;height:4px;}
@@ -476,29 +481,8 @@ body.light #constellationCanvas{opacity:0.25;mix-blend-mode:multiply;}
 .loading-phrase{font-size:12px;color:rgba(216,212,206,0.3);font-style:italic;letter-spacing:0.06em;animation:loadFadeIn 0.8s ease 0.6s both;min-height:18px;}
 @keyframes loadFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
-/* ── CUSTOM CURSOR ────────────────────────────*/
-body{cursor:none;}
-body *{cursor:none!important;}
-#customCursor{
-  position:fixed;pointer-events:none;z-index:999998;
-  width:12px;height:12px;border-radius:50%;
-  background:radial-gradient(circle,rgba(132,169,140,0.9) 0%,rgba(132,169,140,0) 70%);
-  transform:translate(-50%,-50%);
-  transition:transform 0.08s ease,width 0.2s ease,height 0.2s ease,background 0.2s ease;
-  mix-blend-mode:screen;
-}
-#customCursorRing{
-  position:fixed;pointer-events:none;z-index:999997;
-  width:28px;height:28px;border-radius:50%;
-  border:1px solid rgba(132,169,140,0.35);
-  transform:translate(-50%,-50%);
-  transition:transform 0.18s ease,width 0.25s ease,height 0.25s ease,border-color 0.2s ease;
-}
-body.cursor-hover #customCursor{width:18px;height:18px;background:radial-gradient(circle,rgba(201,168,196,0.9) 0%,rgba(201,168,196,0) 70%);}
-body.cursor-hover #customCursorRing{width:38px;height:38px;border-color:rgba(201,168,196,0.5);}
-body.cursor-click #customCursor{width:8px;height:8px;}
-body.cursor-click #customCursorRing{width:44px;height:44px;opacity:0.3;}
-@media(pointer:coarse){body{cursor:auto;}body *{cursor:auto!important;}#customCursor,#customCursorRing{display:none;}}
+/* ── CUSTOM CURSOR — removed, native cursor restored ─*/
+@media(pointer:coarse){#customCursor,#customCursorRing{display:none;}}
 
 /* ── QUIET HOURS ──────────────────────────────*/
 .quiet-hours-banner{
