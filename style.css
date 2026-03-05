@@ -145,8 +145,11 @@ body.light .mood-filter-bar{background:rgba(246,243,238,0.88);}
 .stat-label{font-size:10.5px;color:var(--muted);}
 .btn-save-profile{width:100%;padding:11px;border-radius:50px;background:linear-gradient(135deg,var(--sage),var(--mauve));color:white;border:none;font-family:var(--fd);font-size:16px;cursor:pointer;transition:all 0.25s;margin-bottom:10px;}
 .btn-save-profile:hover{transform:translateY(-1px);}
-.btn-signout{width:100%;padding:10px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-family:var(--fb);font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.2s;}
+.btn-signout{width:100%;padding:10px;border-radius:50px;border:1.5px solid var(--border);background:transparent;font-family:var(--fb);font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.2s;margin-top:10px;}
 .btn-signout:hover{border-color:#C08080;color:#C08080;}
+.profile-section-divider{display:flex;align-items:center;gap:10px;margin:20px 0 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);}
+.profile-section-divider::before,.profile-section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+#profilePanel{width:340px;}
 
 /* Notif panel */
 .notif-list{display:flex;flex-direction:column;gap:9px;margin-bottom:14px;min-height:60px;}
