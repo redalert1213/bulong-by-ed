@@ -453,3 +453,87 @@ body.light #constellationCanvas{opacity:0.25;mix-blend-mode:multiply;}
   .side-panel,.wide-panel{width:100%;}
   .welcome-card,.name-setup-card{padding:30px 20px;}
 }
+
+/* ══════════════════════════════════════════════
+   BATCH 1 ADDITIONS
+   ══════════════════════════════════════════════ */
+
+/* ── LOADING SCREEN ───────────────────────────*/
+#loadingScreen{
+  position:fixed;inset:0;z-index:9000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity 0.7s ease,transform 0.7s ease;
+}
+#loadingScreen.fade-out{opacity:0;transform:scale(1.04);pointer-events:none;}
+.loading-inner{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.loading-logo{animation:loadLogoFloat 2s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(107,158,122,0.6));}
+@keyframes loadLogoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.loading-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:400;letter-spacing:0.1em;color:#84A98C;animation:loadFadeIn 0.8s ease 0.2s both;}
+.loading-tagline{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:rgba(216,212,206,0.4);letter-spacing:0.14em;animation:loadFadeIn 0.8s ease 0.4s both;}
+.loading-bar-wrap{width:180px;height:2px;background:rgba(107,158,122,0.15);border-radius:2px;overflow:hidden;margin-top:8px;animation:loadFadeIn 0.8s ease 0.5s both;}
+.loading-bar{height:100%;width:0%;background:linear-gradient(90deg,#84A98C,#C9A8C4);border-radius:2px;transition:width 0.3s ease;}
+.loading-phrase{font-size:12px;color:rgba(216,212,206,0.3);font-style:italic;letter-spacing:0.06em;animation:loadFadeIn 0.8s ease 0.6s both;min-height:18px;}
+@keyframes loadFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── CUSTOM CURSOR ────────────────────────────*/
+body{cursor:none;}
+body *{cursor:none!important;}
+#customCursor{
+  position:fixed;pointer-events:none;z-index:999998;
+  width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,rgba(132,169,140,0.9) 0%,rgba(132,169,140,0) 70%);
+  transform:translate(-50%,-50%);
+  transition:transform 0.08s ease,width 0.2s ease,height 0.2s ease,background 0.2s ease;
+  mix-blend-mode:screen;
+}
+#customCursorRing{
+  position:fixed;pointer-events:none;z-index:999997;
+  width:28px;height:28px;border-radius:50%;
+  border:1px solid rgba(132,169,140,0.35);
+  transform:translate(-50%,-50%);
+  transition:transform 0.18s ease,width 0.25s ease,height 0.25s ease,border-color 0.2s ease;
+}
+body.cursor-hover #customCursor{width:18px;height:18px;background:radial-gradient(circle,rgba(201,168,196,0.9) 0%,rgba(201,168,196,0) 70%);}
+body.cursor-hover #customCursorRing{width:38px;height:38px;border-color:rgba(201,168,196,0.5);}
+body.cursor-click #customCursor{width:8px;height:8px;}
+body.cursor-click #customCursorRing{width:44px;height:44px;opacity:0.3;}
+@media(pointer:coarse){body{cursor:auto;}body *{cursor:auto!important;}#customCursor,#customCursorRing{display:none;}}
+
+/* ── QUIET HOURS ──────────────────────────────*/
+.quiet-hours-banner{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:850;background:var(--glass);backdrop-filter:blur(24px);
+  border:1px solid rgba(201,168,196,0.25);border-radius:24px;
+  padding:28px 32px;text-align:center;max-width:320px;width:90%;
+  box-shadow:0 16px 48px rgba(0,0,0,0.5);animation:cardIn 0.6s cubic-bezier(0.34,1.2,0.64,1);
+}
+.quiet-hours-banner.hidden{display:none;}
+.qh-moon{font-size:36px;margin-bottom:10px;display:block;animation:moonFloat 3s ease-in-out infinite;}
+@keyframes moonFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.qh-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:#C9A8C4;margin-bottom:8px;}
+.qh-msg{font-size:13.5px;color:rgba(216,212,206,0.6);line-height:1.7;margin-bottom:16px;}
+.qh-close{padding:8px 22px;border-radius:50px;border:1.5px solid rgba(201,168,196,0.3);background:transparent;color:rgba(216,212,206,0.5);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.qh-close:hover{border-color:#C9A8C4;color:#C9A8C4;}
+body.quiet-hours .navbar{border-bottom-color:rgba(201,168,196,0.12);}
+body.quiet-hours .btn-confess{background:linear-gradient(135deg,#4a6b55,#8a6b87);}
+body.quiet-hours #ambientCanvas{opacity:0.2;}
+
+/* ── TIME FILTER & MAP CONTROLS ───────────────*/
+.map-controls{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  z-index:700;display:flex;align-items:center;gap:10px;
+  background:var(--glass);backdrop-filter:blur(18px);
+  border:1px solid var(--border);border-radius:50px;
+  padding:8px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.3);
+}
+.map-ctrl-btn{
+  width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);
+  background:transparent;font-size:14px;cursor:pointer;
+  transition:all 0.2s;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.map-ctrl-btn:hover{background:rgba(107,158,122,0.15);border-color:var(--sage);transform:scale(1.1);}
+.time-filter-wrap{display:flex;align-items:center;gap:8px;}
+.time-filter-label{font-size:11.5px;color:var(--muted);white-space:nowrap;min-width:72px;}
+.time-slider{width:90px;accent-color:var(--sage);cursor:pointer;height:3px;}
