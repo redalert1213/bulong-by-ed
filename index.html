@@ -398,6 +398,8 @@
         <button class="type-tab" data-type="video"><span>🎬</span> Video</button>
         <button class="type-tab" data-type="youtube"><span>▶️</span> YouTube</button>
         <button class="type-tab" data-type="tiktok"><span>🎵</span> TikTok</button>
+        <button class="type-tab" data-type="voice"><span>🎙</span> Voice</button>
+        <button class="type-tab" data-type="doodle"><span>🎨</span> Doodle</button>
       </div>
 
       <div class="input-section" id="messageSection">
@@ -448,6 +450,49 @@
         <textarea class="confession-textarea small" id="tiktokCaption" placeholder="A few words... (optional)" maxlength="200"></textarea>
       </div>
 
+      <!-- VOICE NOTE -->
+      <div class="input-section hidden" id="voiceSection">
+        <div class="voice-recorder">
+          <div class="voice-visualizer" id="voiceVisualizer">
+            <div class="voice-bars" id="voiceBars">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="voice-timer" id="voiceTimer">0:00 / 0:30</div>
+          </div>
+          <div class="voice-controls">
+            <button class="voice-btn" id="voiceRecordBtn">🎙 Hold to record</button>
+            <button class="voice-btn voice-play hidden" id="voicePlayBtn">▶ Play</button>
+            <button class="voice-btn voice-clear hidden" id="voiceClearBtn">✕ Clear</button>
+          </div>
+          <audio id="voiceAudioPreview" style="display:none"></audio>
+        </div>
+        <textarea class="confession-textarea small" id="voiceCaption" placeholder="A few words to go with your voice... (optional)" maxlength="200"></textarea>
+      </div>
+
+      <!-- DOODLE -->
+      <div class="input-section hidden" id="doodleSection">
+        <div class="doodle-wrap">
+          <canvas id="doodleCanvas" width="500" height="220"></canvas>
+          <div class="doodle-toolbar">
+            <div class="doodle-colors">
+              <button class="doodle-color active" data-color="#84A98C" style="background:#84A98C"></button>
+              <button class="doodle-color" data-color="#C9A8C4" style="background:#C9A8C4"></button>
+              <button class="doodle-color" data-color="#F0C97F" style="background:#F0C97F"></button>
+              <button class="doodle-color" data-color="#E8A5B0" style="background:#E8A5B0"></button>
+              <button class="doodle-color" data-color="#7B8DB0" style="background:#7B8DB0"></button>
+              <button class="doodle-color" data-color="#D8D4CE" style="background:#D8D4CE"></button>
+            </div>
+            <div class="doodle-tools">
+              <input type="range" id="brushSize" min="2" max="20" value="4" class="brush-slider" title="Brush size"/>
+              <button class="doodle-tool-btn" id="doodleErase" title="Eraser">◻</button>
+              <button class="doodle-tool-btn" id="doodleClear" title="Clear all">🗑</button>
+            </div>
+          </div>
+        </div>
+        <textarea class="confession-textarea small" id="doodleCaption" placeholder="A few words about your drawing... (optional)" maxlength="200"></textarea>
+      </div>
+
       <div class="anon-row">
         <label class="anon-label">Posted as</label>
         <div class="posted-as-row">
@@ -469,6 +514,11 @@
           <button class="mood-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
           <button class="mood-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
           <button class="mood-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
+          <button class="mood-btn" data-mood="custom" data-color="#84A98C" id="customMoodBtn">🎨 Custom</button>
+        </div>
+        <div class="custom-color-row hidden" id="customColorRow">
+          <label class="field-label" style="font-size:11px">Pick your color</label>
+          <input type="color" id="customMoodColor" value="#84A98C" class="color-picker-input"/>
         </div>
       </div>
 
