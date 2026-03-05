@@ -10,97 +10,190 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Firebase SDK (compat version — works in plain HTML/JS) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
-  <canvas id="ambientCanvas"></canvas>
+<canvas id="ambientCanvas"></canvas>
 
-  <!-- ══════════════════════════════════════════
-       WELCOME / LOGIN SCREEN
-  ══════════════════════════════════════════ -->
-  <div class="welcome-screen" id="welcomeScreen">
-    <div class="welcome-bg"></div>
-    <div class="welcome-particles" id="welcomeParticles"></div>
+<!-- ══ LOGO SVG DEFINITION (reused everywhere) ══ -->
+<!-- Concept 01: Two speech bubbles -->
+<svg style="display:none">
+  <symbol id="bulong-logo" viewBox="0 0 56 44">
+    <defs>
+      <linearGradient id="lg-logo" x1="0" y1="0" x2="56" y2="44" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#84A98C"/>
+        <stop offset="100%" stop-color="#C9A8C4"/>
+      </linearGradient>
+    </defs>
+    <!-- Left bubble -->
+    <rect x="1" y="2" width="28" height="20" rx="7" stroke="#84A98C" stroke-width="1.5" fill="rgba(132,169,140,0.1)"/>
+    <path d="M8 22 L5 30 L14 22Z" fill="rgba(132,169,140,0.1)" stroke="#84A98C" stroke-width="1.3" stroke-linejoin="round"/>
+    <!-- Left dots -->
+    <circle cx="9"  cy="12" r="1.8" fill="#84A98C" opacity="0.75"/>
+    <circle cx="15" cy="12" r="1.8" fill="#84A98C" opacity="0.5"/>
+    <circle cx="21" cy="12" r="1.8" fill="#84A98C" opacity="0.3"/>
+    <!-- Right bubble — offset down, mauve -->
+    <rect x="27" y="14" width="28" height="20" rx="7" stroke="#C9A8C4" stroke-width="1.5" fill="rgba(201,168,196,0.1)"/>
+    <path d="M48 34 L51 42 L42 34Z" fill="rgba(201,168,196,0.1)" stroke="#C9A8C4" stroke-width="1.3" stroke-linejoin="round"/>
+    <!-- Right dots -->
+    <circle cx="35" cy="24" r="1.8" fill="#C9A8C4" opacity="0.75"/>
+    <circle cx="41" cy="24" r="1.8" fill="#C9A8C4" opacity="0.5"/>
+    <circle cx="47" cy="24" r="1.8" fill="#C9A8C4" opacity="0.3"/>
+  </symbol>
+</svg>
 
-    <div class="welcome-card">
-      <div class="welcome-logo">
-        <svg width="52" height="52" viewBox="0 0 34 34" fill="none">
-          <path d="M17 3 C17 3 6 14 6 20.5 C6 26.3 11 31 17 31 C23 31 28 26.3 28 20.5 C28 14 17 3 17 3Z" fill="#84A98C" opacity="0.25"/>
-          <path d="M17 3 C17 3 6 14 6 20.5 C6 26.3 11 31 17 31 C23 31 28 26.3 28 20.5 C28 14 17 3 17 3Z" stroke="#84A98C" stroke-width="1.6" fill="none"/>
-          <path d="M13 16 Q12 19 13 22" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.45"/>
-          <ellipse cx="17" cy="21" rx="5.5" ry="2" stroke="#B8A0B3" stroke-width="0.9" opacity="0.55"/>
-        </svg>
-      </div>
-      <h1 class="welcome-title">Bulong</h1>
-      <p class="welcome-tagline">Say it safely</p>
-      <p class="welcome-desc">Leave what you’ve been carrying. Pin your whisper on the map and let someone, somewhere, find comfort in knowing they are not alone.</p>
-
-      <button class="btn-google-signin" id="googleSignInBtn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-        </svg>
-        Continue with Google
-      </button>
-
-      <p class="welcome-privacy"></p>
+<!-- ══ WELCOME SCREEN ══ -->
+<div class="welcome-screen" id="welcomeScreen">
+  <div class="welcome-bg"></div>
+  <div class="welcome-card">
+    <div class="welcome-logo">
+      <svg width="80" height="63" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
     </div>
+    <h1 class="welcome-title">Bulong</h1>
+    <p class="welcome-tagline">Say it safely</p>
+    <p class="welcome-desc">Leave what you've been carrying. Pin your whisper on the map and let someone, somewhere, find comfort in knowing they are not alone.</p>
+    <button class="btn-google-signin" id="googleSignInBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Continue with Google
+    </button>
+    <p class="welcome-privacy">Your identity is yours. You choose what name appears on your whispers.</p>
+  </div>
+</div>
+
+<!-- ══ NAME SETUP ══ -->
+<div class="name-setup-screen" id="nameSetupScreen">
+  <div class="name-setup-card">
+    <div class="name-setup-logo">
+      <svg width="52" height="41" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
+    </div>
+    <h2 class="name-setup-title">How should we know you?</h2>
+    <p class="name-setup-sub">This is what appears on your whispers. You can always change it later.</p>
+    <div class="name-options">
+      <button class="name-option active" id="useRealName">
+        <span class="name-option-icon">👤</span>
+        <div><div class="name-option-label">Use my name</div><div class="name-option-val" id="googleNamePreview">Loading...</div></div>
+      </button>
+      <button class="name-option" id="useCustomName">
+        <span class="name-option-icon">✏️</span>
+        <div><div class="name-option-label">Choose a name</div><div class="name-option-val">Pick something else</div></div>
+      </button>
+      <button class="name-option" id="useAnonymous">
+        <span class="name-option-icon">🌿</span>
+        <div><div class="name-option-label">Stay anonymous</div><div class="name-option-val">Always post as "Anonymous"</div></div>
+      </button>
+    </div>
+    <div class="custom-name-input hidden" id="customNameWrap">
+      <input class="field-input" id="customNameInput" type="text" placeholder="Your display name..." maxlength="30" />
+    </div>
+    <div class="color-pick-section">
+      <label class="field-label">Your color on the map</label>
+      <div class="color-swatches" id="setupSwatches">
+        <button class="swatch active" data-color="#84A98C" style="background:#84A98C"></button>
+        <button class="swatch" data-color="#B8A0B3" style="background:#B8A0B3"></button>
+        <button class="swatch" data-color="#7B8DB0" style="background:#7B8DB0"></button>
+        <button class="swatch" data-color="#E8A5B0" style="background:#E8A5B0"></button>
+        <button class="swatch" data-color="#F0C97F" style="background:#F0C97F"></button>
+        <button class="swatch" data-color="#A8C4A2" style="background:#A8C4A2"></button>
+        <button class="swatch" data-color="#9FB4C7" style="background:#9FB4C7"></button>
+        <button class="swatch" data-color="#C4A882" style="background:#C4A882"></button>
+      </div>
+    </div>
+    <button class="btn-enter" id="enterBulongBtn">Enter Bulong →</button>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div class="app-shell hidden" id="appShell">
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <svg class="brand-svg" width="40" height="31" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
+      <span class="brand-name">Bulong</span>
+    </div>
+    <div class="nav-center"><span class="tagline">Say it safely</span></div>
+    <div class="nav-right">
+      <div class="online-indicator">
+        <span class="pulse-dot"></span>
+        <span id="onlineCount">1</span><span class="online-label"> here with you</span>
+      </div>
+      <button class="profile-pill" id="profileBtn">
+        <span class="profile-dot" id="profileDot"></span>
+        <span class="profile-name" id="profileNameNav">...</span>
+      </button>
+      <button class="notif-btn" id="notifBtn" title="Notifications">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="notif-badge hidden" id="notifBadge">0</span>
+      </button>
+      <!-- Dashboard button -->
+      <button class="nav-icon-btn" id="dashboardBtn" title="My whispers">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </button>
+      <!-- Safety button -->
+      <button class="nav-icon-btn" id="safetyBtn" title="Safety & Privacy">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </button>
+      <button class="btn-confess" id="openConfessBtn">+ Whisper</button>
+      <button class="night-toggle" id="nightToggle" title="Toggle light mode"><span class="night-icon">☀️</span></button>
+    </div>
+  </nav>
+
+  <!-- MOOD FILTER BAR -->
+  <div class="mood-filter-bar">
+    <button class="mf-btn active" data-mood="all">All</button>
+    <button class="mf-btn" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
+    <button class="mf-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
+    <button class="mf-btn" data-mood="relief"     data-color="#A8C4A2">🌱 Relief</button>
+    <button class="mf-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
+    <button class="mf-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
+    <button class="mf-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       DISPLAY NAME SETUP (shown once after login)
-  ══════════════════════════════════════════ -->
-  <div class="name-setup-screen" id="nameSetupScreen">
-    <div class="name-setup-card">
-      <div class="name-setup-logo">
-        <svg width="38" height="38" viewBox="0 0 34 34" fill="none">
-          <path d="M17 3 C17 3 6 14 6 20.5 C6 26.3 11 31 17 31 C23 31 28 26.3 28 20.5 C28 14 17 3 17 3Z" fill="#84A98C" opacity="0.22"/>
-          <path d="M17 3 C17 3 6 14 6 20.5 C6 26.3 11 31 17 31 C23 31 28 26.3 28 20.5 C28 14 17 3 17 3Z" stroke="#84A98C" stroke-width="1.6" fill="none"/>
-          <path d="M13 16 Q12 19 13 22" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.45"/>
-          <ellipse cx="17" cy="21" rx="5.5" ry="2" stroke="#B8A0B3" stroke-width="0.9" opacity="0.5"/>
-        </svg>
-      </div>
-      <h2 class="name-setup-title">How should we know you?</h2>
-      <p class="name-setup-sub">This is what appears on your whispers. You can always change it later.</p>
+  <!-- WHISPER OF THE DAY -->
+  <div class="wotd-banner hidden" id="wotdBanner">
+    <div class="wotd-inner">
+      <div class="wotd-label"><span class="wotd-dot" id="wotdDot"></span><span>Whisper of the day</span></div>
+      <p class="wotd-text" id="wotdText"></p>
+      <span class="wotd-author" id="wotdAuthor"></span>
+      <button class="wotd-view" id="wotdView">Read →</button>
+    </div>
+    <button class="wotd-close" id="wotdClose">✕</button>
+  </div>
 
-      <div class="name-options">
-        <button class="name-option active" id="useRealName">
-          <span class="name-option-icon">👤</span>
-          <div>
-            <div class="name-option-label">Use my name</div>
-            <div class="name-option-val" id="googleNamePreview">Loading...</div>
-          </div>
-        </button>
-        <button class="name-option" id="useCustomName">
-          <span class="name-option-icon">✏️</span>
-          <div>
-            <div class="name-option-label">Choose a name</div>
-            <div class="name-option-val">Pick something else</div>
-          </div>
-        </button>
-        <button class="name-option" id="useAnonymous">
-          <span class="name-option-icon">🌿</span>
-          <div>
-            <div class="name-option-label">Stay anonymous</div>
-            <div class="name-option-val">Always post as "Anonymous"</div>
-          </div>
-        </button>
-      </div>
+  <!-- MAP -->
+  <div id="map"></div>
+  <div id="glowContainer"></div>
 
-      <div class="custom-name-input hidden" id="customNameWrap">
-        <input class="field-input" id="customNameInput" type="text" placeholder="Your display name..." maxlength="30" />
+  <!-- PROFILE PANEL -->
+  <div class="side-panel" id="profilePanel">
+    <div class="side-panel-inner">
+      <button class="side-close" id="profileClose">✕</button>
+      <h3 class="side-title">Your presence</h3>
+      <div class="profile-avatar-preview" id="profileAvatarPreview"><span id="profileAvatarInitial">?</span></div>
+      <div class="profile-field">
+        <label class="field-label">Display name</label>
+        <input class="field-input" id="profileNameInput" type="text" maxlength="30" />
       </div>
-
-      <div class="color-pick-section">
-        <label class="field-label">Your color on the map</label>
-        <div class="color-swatches" id="setupSwatches">
+      <div class="profile-field">
+        <label class="field-label">Your color</label>
+        <div class="color-swatches" id="colorSwatches">
           <button class="swatch active" data-color="#84A98C" style="background:#84A98C"></button>
           <button class="swatch" data-color="#B8A0B3" style="background:#B8A0B3"></button>
           <button class="swatch" data-color="#7B8DB0" style="background:#7B8DB0"></button>
@@ -111,272 +204,307 @@
           <button class="swatch" data-color="#C4A882" style="background:#C4A882"></button>
         </div>
       </div>
-
-      <button class="btn-enter" id="enterBulongBtn">Enter Bulong →</button>
+      <div class="profile-stats">
+        <div class="stat-item"><span class="stat-num" id="statPosts">0</span><span class="stat-label">Whispers</span></div>
+        <div class="stat-item"><span class="stat-num" id="statReactions">0</span><span class="stat-label">Reactions</span></div>
+      </div>
+      <button class="btn-save-profile" id="saveProfileBtn">Save presence</button>
+      <button class="btn-signout" id="signOutBtn">Sign out</button>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       MAIN APP
-  ══════════════════════════════════════════ -->
-  <div class="app-shell hidden" id="appShell">
-
-    <!-- NAV -->
-    <nav class="navbar">
-      <div class="nav-brand">
-        <svg class="brand-svg" width="34" height="34" viewBox="0 0 34 34" fill="none">
-          <path d="M17 3 C17 3 6 14 6 20.5 C6 26.3 11 31 17 31 C23 31 28 26.3 28 20.5 C28 14 17 3 17 3Z" fill="#84A98C" opacity="0.22"/>
-          <path d="M17 3 C17 3 6 14 6 20.5 C6 26.3 11 31 17 31 C23 31 28 26.3 28 20.5 C28 14 17 3 17 3Z" stroke="#84A98C" stroke-width="1.6" fill="none"/>
-          <path d="M13 16 Q12 19 13 22" stroke="white" stroke-width="1.2" stroke-linecap="round" opacity="0.45"/>
-          <ellipse cx="17" cy="21" rx="5.5" ry="2" stroke="#B8A0B3" stroke-width="0.9" opacity="0.5"/>
-        </svg>
-        <span class="brand-name">Bulong</span>
-      </div>
-      <div class="nav-center"><span class="tagline">Say it safely</span></div>
-      <div class="nav-right">
-        <div class="online-indicator">
-          <span class="pulse-dot"></span>
-          <span id="onlineCount">1</span><span class="online-label"> here with you</span>
-        </div>
-        <button class="profile-pill" id="profileBtn">
-          <span class="profile-dot" id="profileDot"></span>
-          <span class="profile-name" id="profileNameNav">...</span>
-        </button>
-        <button class="notif-btn" id="notifBtn" title="Notifications">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          <span class="notif-badge hidden" id="notifBadge">0</span>
-        </button>
-        <button class="btn-confess" id="openConfessBtn">+ Whisper</button>
-        <button class="night-toggle" id="nightToggle" title="Toggle light mode">
-          <span class="night-icon">☀️</span>
-        </button>
-      </div>
-    </nav>
-
-    <!-- MOOD FILTER BAR -->
-    <div class="mood-filter-bar">
-      <button class="mf-btn active" data-mood="all">All</button>
-      <button class="mf-btn" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
-      <button class="mf-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
-      <button class="mf-btn" data-mood="relief"     data-color="#A8C4A2">🌱 Relief</button>
-      <button class="mf-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
-      <button class="mf-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
-      <button class="mf-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
+  <!-- NOTIFICATIONS PANEL -->
+  <div class="side-panel" id="notifPanel">
+    <div class="side-panel-inner">
+      <button class="side-close" id="notifClose">✕</button>
+      <h3 class="side-title">Notifications</h3>
+      <p class="side-subtitle">Reactions and replies on your whispers.</p>
+      <div class="notif-list" id="notifList"></div>
+      <button class="btn-clear-notifs" id="clearNotifsBtn">Clear all</button>
     </div>
+  </div>
 
-    <!-- WHISPER OF THE DAY -->
-    <div class="wotd-banner hidden" id="wotdBanner">
-      <div class="wotd-inner">
-        <div class="wotd-label"><span class="wotd-dot" id="wotdDot"></span><span>Whisper of the day</span></div>
-        <p class="wotd-text" id="wotdText"></p>
-        <span class="wotd-author" id="wotdAuthor"></span>
-        <button class="wotd-view" id="wotdView">Read →</button>
+  <!-- DASHBOARD PANEL -->
+  <div class="side-panel wide-panel" id="dashboardPanel">
+    <div class="side-panel-inner">
+      <button class="side-close" id="dashboardClose">✕</button>
+      <h3 class="side-title">My whispers</h3>
+      <p class="side-subtitle">Your emotional journey on Bulong.</p>
+
+      <!-- Mood breakdown -->
+      <div class="dash-section">
+        <div class="dash-section-label">Mood history</div>
+        <div class="mood-bars" id="moodBars"></div>
       </div>
-      <button class="wotd-close" id="wotdClose">✕</button>
+
+      <!-- My posts list -->
+      <div class="dash-section">
+        <div class="dash-section-label">Your whispers</div>
+        <div class="my-posts-list" id="myPostsList"></div>
+      </div>
     </div>
+  </div>
 
-    <!-- MAP -->
-    <div id="map"></div>
-    <div id="glowContainer"></div>
+  <!-- SAFETY PANEL -->
+  <div class="side-panel wide-panel" id="safetyPanel">
+    <div class="side-panel-inner">
+      <button class="side-close" id="safetyClose">✕</button>
+      <h3 class="side-title">Safety & Privacy</h3>
 
-    <!-- PROFILE PANEL -->
-    <div class="side-panel" id="profilePanel">
-      <div class="side-panel-inner">
-        <button class="side-close" id="profileClose">✕</button>
-        <h3 class="side-title">Your presence</h3>
-        <div class="profile-avatar-preview" id="profileAvatarPreview">
-          <span id="profileAvatarInitial">?</span>
-        </div>
-        <div class="profile-field">
-          <label class="field-label">Display name</label>
-          <input class="field-input" id="profileNameInput" type="text" maxlength="30" />
-        </div>
-        <div class="profile-field">
-          <label class="field-label">Your color</label>
-          <div class="color-swatches" id="colorSwatches">
-            <button class="swatch active" data-color="#84A98C" style="background:#84A98C"></button>
-            <button class="swatch" data-color="#B8A0B3" style="background:#B8A0B3"></button>
-            <button class="swatch" data-color="#7B8DB0" style="background:#7B8DB0"></button>
-            <button class="swatch" data-color="#E8A5B0" style="background:#E8A5B0"></button>
-            <button class="swatch" data-color="#F0C97F" style="background:#F0C97F"></button>
-            <button class="swatch" data-color="#A8C4A2" style="background:#A8C4A2"></button>
-            <button class="swatch" data-color="#9FB4C7" style="background:#9FB4C7"></button>
-            <button class="swatch" data-color="#C4A882" style="background:#C4A882"></button>
+      <div class="safety-block">
+        <div class="safety-icon">🛡</div>
+        <div class="safety-block-title">Your privacy</div>
+        <p class="safety-block-body">Bulong does not sell your data. Your Google account is used only to identify you across sessions. You can post anonymously at any time — your name is never required.</p>
+      </div>
+
+      <div class="safety-block">
+        <div class="safety-icon">🌿</div>
+        <div class="safety-block-title">Community guidelines</div>
+        <p class="safety-block-body">Bulong is a space for honest, vulnerable expression — not hate. Posts that target, threaten, or harass others will be removed. Be the kind of stranger you'd want to find your whisper.</p>
+      </div>
+
+      <div class="safety-block">
+        <div class="safety-icon">🧠</div>
+        <div class="safety-block-title">Mental health disclaimer</div>
+        <p class="safety-block-body">Bulong is not a substitute for professional mental health support. Kinig AI is a compassionate listener, not a therapist. If you're in crisis, please reach out to a professional.</p>
+      </div>
+
+      <div class="safety-block crisis">
+        <div class="safety-icon">📞</div>
+        <div class="safety-block-title">Crisis resources</div>
+        <div class="crisis-lines">
+          <div class="crisis-item">
+            <span class="crisis-name">HOPELINE Philippines</span>
+            <span class="crisis-num">02-8804-4673</span>
+          </div>
+          <div class="crisis-item">
+            <span class="crisis-name">HOPELINE SMS</span>
+            <span class="crisis-num">0917-558-4673</span>
+          </div>
+          <div class="crisis-item">
+            <span class="crisis-name">In Touch Crisis Line</span>
+            <span class="crisis-num">02-8893-7603</span>
+          </div>
+          <div class="crisis-item">
+            <span class="crisis-name">Available</span>
+            <span class="crisis-num">24/7 · Free · Confidential</span>
           </div>
         </div>
-        <div class="profile-stats">
-          <div class="stat-item"><span class="stat-num" id="statPosts">0</span><span class="stat-label">Whispers</span></div>
-          <div class="stat-item"><span class="stat-num" id="statReactions">0</span><span class="stat-label">Reactions</span></div>
+      </div>
+
+      <div class="safety-block">
+        <div class="safety-icon">⏳</div>
+        <div class="safety-block-title">Whisper expiry</div>
+        <p class="safety-block-body">All whispers expire automatically (3–24 hrs). Nothing stays forever. This is intentional — your words are heard, then released.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- KINIG -->
+  <button class="kinig-btn" id="kinigBtn">
+    <div class="kinig-avatar">
+      <div class="kinig-face">
+        <div class="kinig-eyes"><span class="kinig-eye"></span><span class="kinig-eye"></span></div>
+        <div class="kinig-mouth"></div>
+      </div>
+    </div>
+    <span class="kinig-label">Kinig</span>
+    <span class="kinig-badge">AI</span>
+  </button>
+
+  <!-- CONFESSION MODAL -->
+  <div class="modal-overlay" id="confessModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeConfessBtn">✕</button>
+      <h2 class="modal-title">Share your whisper</h2>
+      <p class="modal-subtitle">You are safe here. Say what's in your heart.</p>
+
+      <!-- GUIDED REFLECTION PROMPT -->
+      <div class="reflection-prompt" id="reflectionPrompt">
+        <span class="reflection-icon">✨</span>
+        <span class="reflection-text" id="reflectionText"></span>
+        <button class="reflection-shuffle" id="reflectionShuffle" title="New prompt">↺</button>
+      </div>
+
+      <div class="type-tabs">
+        <button class="type-tab active" data-type="message"><span>✍️</span> Message</button>
+        <button class="type-tab" data-type="photo"><span>📷</span> Photo</button>
+        <button class="type-tab" data-type="video"><span>🎬</span> Video</button>
+        <button class="type-tab" data-type="youtube"><span>▶️</span> YouTube</button>
+        <button class="type-tab" data-type="tiktok"><span>🎵</span> TikTok</button>
+      </div>
+
+      <div class="input-section" id="messageSection">
+        <textarea class="confession-textarea" id="confessionText" placeholder="Whatever you've been carrying... leave it here." maxlength="500"></textarea>
+        <div class="char-counter"><span id="charCount">0</span>/500</div>
+      </div>
+
+      <!-- PHOTO UPLOAD -->
+      <div class="input-section hidden" id="photoSection">
+        <div class="upload-area" id="photoUploadArea">
+          <input type="file" id="photoFile" accept="image/*" style="display:none"/>
+          <div class="upload-placeholder" id="photoPlaceholder">
+            <span style="font-size:32px">📷</span>
+            <p>Tap to choose a photo</p>
+            <p class="upload-limit">Maximum 50MB</p>
+          </div>
+          <img id="photoPreview" class="media-preview hidden" alt="Preview"/>
         </div>
-        <button class="btn-save-profile" id="saveProfileBtn">Save presence</button>
-        <button class="btn-signout" id="signOutBtn">Sign out</button>
+        <textarea class="confession-textarea small" id="photoCaption" placeholder="A few words to go with your photo... (optional)" maxlength="200"></textarea>
+      </div>
+
+      <!-- VIDEO UPLOAD -->
+      <div class="input-section hidden" id="videoSection">
+        <div class="upload-area" id="videoUploadArea">
+          <input type="file" id="videoFile" accept="video/*" style="display:none"/>
+          <div class="upload-placeholder" id="videoPlaceholder">
+            <span style="font-size:32px">🎬</span>
+            <p>Tap to choose a video</p>
+            <p class="upload-limit">Max 20 seconds · will be trimmed if longer</p>
+          </div>
+          <video id="videoPreview" class="media-preview hidden" controls muted playsinline></video>
+          <div class="video-trim-bar hidden" id="videoTrimBar">
+            <div class="trim-label">Trim to 20s: <span id="trimInfo">0s – 20s</span></div>
+            <input type="range" id="trimStart" min="0" max="0" value="0" step="0.1" class="trim-slider"/>
+            <label class="trim-slider-label">Start point</label>
+            <div class="trim-preview-note">Video will be uploaded from your selected start point (first 20s)</div>
+          </div>
+        </div>
+        <textarea class="confession-textarea small" id="videoCaption" placeholder="A few words... (optional)" maxlength="200"></textarea>
+      </div>
+
+      <div class="input-section hidden" id="youtubeSection">
+        <input class="link-input" id="youtubeLink" type="text" placeholder="Paste a YouTube link that matches your mood..." />
+        <textarea class="confession-textarea small" id="youtubeCaption" placeholder="What does this song mean to you? (optional)" maxlength="200"></textarea>
+      </div>
+      <div class="input-section hidden" id="tiktokSection">
+        <input class="link-input" id="tiktokLink" type="text" placeholder="Paste a TikTok link..." />
+        <textarea class="confession-textarea small" id="tiktokCaption" placeholder="A few words... (optional)" maxlength="200"></textarea>
+      </div>
+
+      <div class="anon-row">
+        <label class="anon-label">Posted as</label>
+        <div class="posted-as-row">
+          <span class="posted-as-name" id="postedAsName">Anonymous</span>
+          <label class="anon-toggle">
+            <input type="checkbox" id="anonCheck" />
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Anonymous</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mood-row">
+        <span class="mood-label">Mood of your whisper</span>
+        <div class="mood-options">
+          <button class="mood-btn active" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
+          <button class="mood-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
+          <button class="mood-btn" data-mood="relief"     data-color="#A8C4A2">🌱 Relief</button>
+          <button class="mood-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
+          <button class="mood-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
+          <button class="mood-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
+        </div>
+      </div>
+
+      <div class="expiry-row">
+        <span class="mood-label">How long should this whisper stay?</span>
+        <div class="expiry-options">
+          <button class="expiry-btn" data-hours="3">3 hrs</button>
+          <button class="expiry-btn" data-hours="6">6 hrs</button>
+          <button class="expiry-btn active" data-hours="12">12 hrs</button>
+          <button class="expiry-btn" data-hours="24">24 hrs</button>
+        </div>
+      </div>
+
+      <div class="post-limit-bar">
+        <div class="post-limit-label">
+          <span>Daily whispers used</span>
+          <span id="postsLeftLabel" class="posts-left-text">5 remaining</span>
+        </div>
+        <div class="post-limit-track"><div class="post-limit-fill" id="postLimitFill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Upload progress -->
+      <div class="upload-progress hidden" id="uploadProgress">
+        <div class="upload-progress-bar"><div class="upload-progress-fill" id="uploadProgressFill"></div></div>
+        <span class="upload-progress-label" id="uploadProgressLabel">Uploading...</span>
+      </div>
+
+      <button class="btn-submit" id="submitConfession">Release this whisper</button>
+    </div>
+  </div>
+
+  <!-- CONTENT WARNING -->
+  <div class="cw-overlay" id="cwOverlay">
+    <div class="cw-card">
+      <div class="cw-icon" id="cwIcon">🌧</div>
+      <h3 class="cw-title">A gentle heads-up</h3>
+      <p class="cw-body">This whisper is tagged <strong id="cwMood"></strong>. Take a breath before reading — you don't have to if you're not in a safe space right now.</p>
+      <div class="cw-actions">
+        <button class="cw-btn-read" id="cwRead">I'm okay, continue</button>
+        <button class="cw-btn-skip" id="cwSkip">Not right now</button>
       </div>
     </div>
+  </div>
 
-    <!-- NOTIFICATIONS PANEL -->
-    <div class="side-panel" id="notifPanel">
-      <div class="side-panel-inner">
-        <button class="side-close" id="notifClose">✕</button>
-        <h3 class="side-title">Notifications</h3>
-        <p class="side-subtitle">Reactions and replies on your whispers.</p>
-        <div class="notif-list" id="notifList"></div>
-        <button class="btn-clear-notifs" id="clearNotifsBtn">Clear all</button>
+  <!-- CONFESSION POPUP -->
+  <div class="confession-popup" id="confessionPopup">
+    <div class="popup-inner">
+      <button class="popup-close" id="popupClose">✕</button>
+      <div class="popup-header">
+        <div class="popup-mood-dot" id="popupMoodDot"></div>
+        <div class="popup-meta">
+          <span class="popup-author" id="popupAuthor"></span>
+          <span class="popup-time" id="popupTime"></span>
+        </div>
+      </div>
+      <div class="popup-body" id="popupBody"></div>
+      <div class="popup-media" id="popupMedia"></div>
+      <div class="popup-reactions">
+        <button class="react-btn" data-react="heart"  title="Sending love">🤍 <span class="react-count" id="heartCount">0</span></button>
+        <button class="react-btn" data-react="candle" title="Lighting a candle">🕯 <span class="react-count" id="candleCount">0</span></button>
+        <button class="react-btn" data-react="hug"    title="Virtual hug">🫂 <span class="react-count" id="hugCount">0</span></button>
+        <button class="react-btn" data-react="needed" title="I needed to read this">🫶 <span class="react-count" id="neededCount">0</span></button>
+      </div>
+      <div class="reply-section">
+        <div class="replies-list" id="repliesList"></div>
+        <div class="reply-input-row">
+          <input class="reply-input" id="replyInput" type="text" placeholder="Offer a kind word..." maxlength="140" />
+          <button class="reply-send" id="replySend">Send</button>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- KINIG -->
-    <button class="kinig-btn" id="kinigBtn">
-      <div class="kinig-avatar">
-        <div class="kinig-face">
+  <!-- KINIG CHAT -->
+  <div class="kinig-chat" id="kinigChat">
+    <div class="kinig-chat-header">
+      <div class="kinig-chat-avatar">
+        <div class="kinig-face small">
           <div class="kinig-eyes"><span class="kinig-eye"></span><span class="kinig-eye"></span></div>
           <div class="kinig-mouth"></div>
         </div>
       </div>
-      <span class="kinig-label">Kinig</span>
-      <span class="kinig-badge">AI</span>
-    </button>
-
-    <!-- CONFESSION MODAL -->
-    <div class="modal-overlay" id="confessModal">
-      <div class="modal-card">
-        <button class="modal-close" id="closeConfessBtn">✕</button>
-        <h2 class="modal-title">Share your whisper</h2>
-        <p class="modal-subtitle">You are safe here. Say what's in your heart.</p>
-        <div class="type-tabs">
-          <button class="type-tab active" data-type="message"><span>✍️</span> Message</button>
-          <button class="type-tab" data-type="youtube"><span>▶️</span> YouTube</button>
-          <button class="type-tab" data-type="tiktok"><span>🎵</span> TikTok</button>
-        </div>
-        <div class="input-section" id="messageSection">
-          <textarea class="confession-textarea" id="confessionText" placeholder="Whatever you've been carrying... leave it here." maxlength="500"></textarea>
-          <div class="char-counter"><span id="charCount">0</span>/500</div>
-        </div>
-        <div class="input-section hidden" id="youtubeSection">
-          <input class="link-input" id="youtubeLink" type="text" placeholder="Paste a YouTube link that matches your mood..." />
-          <textarea class="confession-textarea small" id="youtubeCaption" placeholder="What does this song mean to you? (optional)" maxlength="200"></textarea>
-        </div>
-        <div class="input-section hidden" id="tiktokSection">
-          <input class="link-input" id="tiktokLink" type="text" placeholder="Paste a TikTok link..." />
-          <textarea class="confession-textarea small" id="tiktokCaption" placeholder="A few words... (optional)" maxlength="200"></textarea>
-        </div>
-        <div class="anon-row">
-          <label class="anon-label">Posted as</label>
-          <div class="posted-as-row">
-            <span class="posted-as-name" id="postedAsName">Anonymous</span>
-            <label class="anon-toggle">
-              <input type="checkbox" id="anonCheck" />
-              <span class="toggle-slider"></span>
-              <span class="toggle-text">Anonymous</span>
-            </label>
-          </div>
-        </div>
-        <div class="mood-row">
-          <span class="mood-label">Mood of your whisper</span>
-          <div class="mood-options">
-            <button class="mood-btn active" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
-            <button class="mood-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
-            <button class="mood-btn" data-mood="relief"     data-color="#A8C4A2">🌱 Relief</button>
-            <button class="mood-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
-            <button class="mood-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
-            <button class="mood-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
-          </div>
-        </div>
-        <div class="expiry-row">
-          <span class="mood-label">How long should this whisper stay?</span>
-          <div class="expiry-options">
-            <button class="expiry-btn" data-hours="3">3 hrs</button>
-            <button class="expiry-btn" data-hours="6">6 hrs</button>
-            <button class="expiry-btn active" data-hours="12">12 hrs</button>
-            <button class="expiry-btn" data-hours="24">24 hrs</button>
-          </div>
-        </div>
-        <div class="post-limit-bar">
-          <div class="post-limit-label">
-            <span>Daily whispers used</span>
-            <span id="postsLeftLabel" class="posts-left-text">5 remaining</span>
-          </div>
-          <div class="post-limit-track"><div class="post-limit-fill" id="postLimitFill" style="width:0%"></div></div>
-        </div>
-        <button class="btn-submit" id="submitConfession">Release this whisper</button>
+      <div>
+        <div class="kinig-chat-name">Kinig</div>
+        <div class="kinig-chat-status">here to listen 🌿</div>
       </div>
+      <button class="kinig-chat-close" id="kinigClose">✕</button>
     </div>
-
-    <!-- CONTENT WARNING -->
-    <div class="cw-overlay" id="cwOverlay">
-      <div class="cw-card">
-        <div class="cw-icon" id="cwIcon">🌧</div>
-        <h3 class="cw-title">A gentle heads-up</h3>
-        <p class="cw-body">This whisper is tagged <strong id="cwMood"></strong>. Take a breath before reading — you don't have to if you're not in a safe space right now.</p>
-        <div class="cw-actions">
-          <button class="cw-btn-read" id="cwRead">I'm okay, continue</button>
-          <button class="cw-btn-skip" id="cwSkip">Not right now</button>
-        </div>
-      </div>
+    <div class="kinig-messages" id="kinigMessages">
+      <div class="kinig-msg bot"><p>Hi, I'm Kinig. 🌿<br>I'm here to listen — no judgment, no rush. What's been weighing on you?</p></div>
     </div>
-
-    <!-- CONFESSION POPUP -->
-    <div class="confession-popup" id="confessionPopup">
-      <div class="popup-inner">
-        <button class="popup-close" id="popupClose">✕</button>
-        <div class="popup-header">
-          <div class="popup-mood-dot" id="popupMoodDot"></div>
-          <div class="popup-meta">
-            <span class="popup-author" id="popupAuthor"></span>
-            <span class="popup-time" id="popupTime"></span>
-          </div>
-        </div>
-        <div class="popup-body" id="popupBody"></div>
-        <div class="popup-media" id="popupMedia"></div>
-        <div class="popup-reactions">
-          <button class="react-btn" data-react="heart"  title="Sending love">🤍 <span class="react-count" id="heartCount">0</span></button>
-          <button class="react-btn" data-react="candle" title="Lighting a candle">🕯 <span class="react-count" id="candleCount">0</span></button>
-          <button class="react-btn" data-react="hug"    title="Virtual hug">🫂 <span class="react-count" id="hugCount">0</span></button>
-          <button class="react-btn" data-react="needed" title="I needed to read this">🫶 <span class="react-count" id="neededCount">0</span></button>
-        </div>
-        <div class="reply-section">
-          <div class="replies-list" id="repliesList"></div>
-          <div class="reply-input-row">
-            <input class="reply-input" id="replyInput" type="text" placeholder="Offer a kind word..." maxlength="200" />
-            <button class="reply-send" id="replySend">Send</button>
-          </div>
-        </div>
-      </div>
+    <div class="kinig-input-row">
+      <input class="kinig-input" id="kinigInput" type="text" placeholder="Talk to me..." maxlength="300" />
+      <button class="kinig-send" id="kinigSend">↑</button>
     </div>
+  </div>
 
-    <!-- KINIG CHAT -->
-    <div class="kinig-chat" id="kinigChat">
-      <div class="kinig-chat-header">
-        <div class="kinig-chat-avatar">
-          <div class="kinig-face small">
-            <div class="kinig-eyes"><span class="kinig-eye"></span><span class="kinig-eye"></span></div>
-            <div class="kinig-mouth"></div>
-          </div>
-        </div>
-        <div>
-          <div class="kinig-chat-name">Kinig</div>
-          <div class="kinig-chat-status">here to listen 🌿</div>
-        </div>
-        <button class="kinig-chat-close" id="kinigClose">✕</button>
-      </div>
-      <div class="kinig-messages" id="kinigMessages">
-        <div class="kinig-msg bot"><p>Hi, I'm Kinig. 🌿<br>I'm here to listen — no judgment, no rush. What's been weighing on you?</p></div>
-      </div>
-      <div class="kinig-input-row">
-        <input class="kinig-input" id="kinigInput" type="text" placeholder="Talk to me..." maxlength="300" />
-        <button class="kinig-send" id="kinigSend">↑</button>
-      </div>
-    </div>
+  <div class="toast" id="toast"></div>
+  <div class="panel-backdrop" id="panelBackdrop"></div>
 
-    <!-- TOAST -->
-    <div class="toast" id="toast"></div>
-    <!-- PANEL BACKDROP -->
-    <div class="panel-backdrop" id="panelBackdrop"></div>
+</div><!-- end app-shell -->
 
-  </div><!-- end app-shell -->
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
