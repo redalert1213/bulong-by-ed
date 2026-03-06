@@ -99,6 +99,104 @@ function expiryLabel(t){ const d=t-Date.now();if(d<=0)return 'soon';const h=Math
 function showToast(msg){ const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3400); }
 function totalReacts(c){ const r=c.reactions||{}; return (r.heart||0)+(r.candle||0)+(r.hug||0)+(r.needed||0); }
 
+// ── WELCOME SCREEN — Particle canvas + live whisper count ──
+(function(){
+  const canvas = document.getElementById('welcomeCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, stars = [], running = true;
+
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Generate stars
+  function initStars(){
+    stars = [];
+    const count = Math.floor((W * H) / 8000);
+    for(let i = 0; i < count; i++){
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.2 + 0.2,
+        a: Math.random(),
+        speed: Math.random() * 0.003 + 0.001,
+        phase: Math.random() * Math.PI * 2,
+        color: Math.random() > 0.7
+          ? `rgba(201,168,196,`  // mauve
+          : `rgba(107,158,122,`, // sage
+      });
+    }
+  }
+  initStars();
+
+  // Subtle drifting orbs
+  const orbs = Array.from({length: 5}, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 180 + 80,
+    dx: (Math.random() - 0.5) * 0.15,
+    dy: (Math.random() - 0.5) * 0.1,
+    color: Math.random() > 0.5 ? 'rgba(107,158,122,' : 'rgba(201,168,196,',
+    a: Math.random() * 0.06 + 0.02,
+  }));
+
+  let frame = 0;
+  function draw(){
+    if(!running) return;
+    ctx.clearRect(0, 0, W, H);
+    frame++;
+
+    // Orbs
+    orbs.forEach(o => {
+      o.x += o.dx; o.y += o.dy;
+      if(o.x < -o.r) o.x = W + o.r;
+      if(o.x > W + o.r) o.x = -o.r;
+      if(o.y < -o.r) o.y = H + o.r;
+      if(o.y > H + o.r) o.y = -o.r;
+      const g = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+      g.addColorStop(0, o.color + o.a + ')');
+      g.addColorStop(1, o.color + '0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Twinkling stars
+    stars.forEach(s => {
+      s.phase += s.speed;
+      const alpha = s.a * (0.4 + 0.6 * Math.abs(Math.sin(s.phase)));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.color + alpha + ')';
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  // Stop when welcome screen hides
+  const ws = document.getElementById('welcomeScreen');
+  const obs = new MutationObserver(() => {
+    if(ws.style.display === 'none') running = false;
+  });
+  obs.observe(ws, {attributes:true, attributeFilter:['style']});
+
+  // Live whisper count
+  try{
+    db.ref('confessions').once('value').then(snap => {
+      const count = snap.numChildren();
+      const el = document.getElementById('wsWhispers');
+      if(el) el.textContent = count > 0 ? count.toLocaleString() : '—';
+    });
+  }catch(e){}
+})();
+
 // ── AMBIENT PARTICLES (orbs + wisps) ─────────
 (function(){
   const canvas=$('ambientCanvas'),ctx=canvas.getContext('2d');
@@ -1158,9 +1256,9 @@ If someone mentions self-harm, suicide, or is in danger:
 - Stay present — don't abruptly change topic or dismiss.`;
 
 // ── KINIG API KEY ─────────────────────────────
-// Replace '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' with your actual Groq API key
+// Replace 'YOUR_GROQ_API_KEY_HERE' with your actual Groq API key
 // Get one FREE at: https://console.groq.com → API Keys
-const KINIG_API_KEY = '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';
+const KINIG_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
 
 async function sendKinig(){
   const text=$('kinigInput').value.trim();
