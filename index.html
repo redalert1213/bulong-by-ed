@@ -313,6 +313,27 @@
         </div>
       </div>
 
+      <!-- SUBSCRIPTION inside profile panel -->
+      <div class="profile-section-divider">
+        <span>Subscription</span>
+      </div>
+      <div class="subscription-block" id="subscriptionBlock">
+        <!-- Status — shown when active -->
+        <div class="sub-active hidden" id="subActive">
+          <div class="sub-active-badge">✦ Unlimited Access</div>
+          <p class="sub-active-desc">Your early access gift is active. Unlimited whispers until <strong id="subExpiry">—</strong>.</p>
+        </div>
+        <!-- Voucher input — shown when no active subscription -->
+        <div class="sub-redeem" id="subRedeem">
+          <p class="sub-redeem-label">Have a voucher key?</p>
+          <div class="sub-input-row">
+            <input class="sub-input field-input" id="voucherInput" type="text" placeholder="BULONG-XXXX-XXXX" maxlength="30" autocomplete="off" spellcheck="false"/>
+            <button class="sub-redeem-btn" id="redeemVoucherBtn">Redeem</button>
+          </div>
+          <p class="sub-hint">Enter your voucher key exactly as shown in your email.</p>
+        </div>
+      </div>
+
       <button class="btn-signout" id="signOutBtn">Sign out</button>
     </div>
   </div>
