@@ -892,96 +892,101 @@ function updateNavProfile(){
 }
 
 // ── KINIG ─────────────────────────────────────
-// ── KINIG BUTTON — draggable + minimizable ────
-// Runs after DOM ready via setTimeout to ensure element exists on iOS
+// ── KINIG BUTTON — draggable, minimizable, iOS-safe ──
 setTimeout(function(){
-  const btn = document.getElementById('kinigBtn');
+  const btn  = document.getElementById('kinigBtn');
   const chat = document.getElementById('kinigChat');
-  if(!btn) return;
+  if(!btn || !chat) return;
 
+  const IS_MOBILE = window.innerWidth <= 768 || ('ontouchstart' in window);
+
+  // ── State ──
   let isDragging = false;
   let didDrag    = false;
-  let startTouchX = 0, startTouchY = 0;
-  let startBtnX   = 0, startBtnY   = 0;
+  let startX=0, startY=0, startLeft=0, startTop=0;
 
-  function isMobileDevice(){
-    return window.innerWidth <= 768 || ('ontouchstart' in window);
-  }
-
-  // Start minimized on mobile
-  if(isMobileDevice()){
+  // ── Init position ──
+  if(IS_MOBILE){
     btn.classList.add('minimized');
-    // Position bottom-right safely
-    btn.style.bottom = '24px';
-    btn.style.right  = '16px';
-    btn.style.top    = 'auto';
-    btn.style.left   = 'auto';
+    btn.style.position = 'fixed';
+    btn.style.bottom   = '24px';
+    btn.style.right    = '16px';
+    btn.style.top      = 'auto';
+    btn.style.left     = 'auto';
   }
 
-  function getClientXY(e){
-    if(e.touches && e.touches.length > 0){
-      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    return { x: e.clientX, y: e.clientY };
+  function getXY(e){
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX, y: src.clientY };
   }
 
-  function onPointerDown(e){
-    const {x, y} = getClientXY(e);
-    startTouchX = x;
-    startTouchY = y;
-    const rect = btn.getBoundingClientRect();
-    startBtnX = rect.left;
-    startBtnY = rect.top;
-    isDragging = true;
-    didDrag = false;
-    btn.classList.add('dragging');
-    // Don't preventDefault here — let iOS register the touch
-  }
-
-  function onPointerMove(e){
-    if(!isDragging) return;
-    const {x, y} = getClientXY(e);
-    const dx = x - startTouchX;
-    const dy = y - startTouchY;
-    if(Math.abs(dx) > 8 || Math.abs(dy) > 8){
-      didDrag = true;
-    }
-    if(!didDrag) return;
-    e.preventDefault(); // only prevent scroll when actually dragging
-    const newX = Math.max(8, Math.min(window.innerWidth  - btn.offsetWidth  - 8, startBtnX + dx));
-    const newY = Math.max(8, Math.min(window.innerHeight - btn.offsetHeight - 8, startBtnY + dy));
-    btn.style.left   = newX + 'px';
-    btn.style.top    = newY + 'px';
+  function startDrag(e){
+    const {x,y} = getXY(e);
+    startX = x; startY = y;
+    // Convert current position to top/left for dragging
+    const r = btn.getBoundingClientRect();
+    startLeft = r.left;
+    startTop  = r.top;
+    btn.style.left   = startLeft + 'px';
+    btn.style.top    = startTop  + 'px';
     btn.style.right  = 'auto';
     btn.style.bottom = 'auto';
+    isDragging = true;
+    didDrag    = false;
+    btn.classList.add('dragging');
   }
 
-  function onPointerUp(e){
+  function moveDrag(e){
+    if(!isDragging) return;
+    const {x,y} = getXY(e);
+    const dx = x - startX, dy = y - startY;
+    if(Math.abs(dx)>6 || Math.abs(dy)>6) didDrag = true;
+    if(!didDrag) return;
+    e.preventDefault();
+    const maxX = window.innerWidth  - btn.offsetWidth  - 8;
+    const maxY = window.innerHeight - btn.offsetHeight - 8;
+    btn.style.left = Math.max(8, Math.min(maxX, startLeft+dx)) + 'px';
+    btn.style.top  = Math.max(8, Math.min(maxY, startTop +dy)) + 'px';
+  }
+
+  function endDrag(e){
     if(!isDragging) return;
     isDragging = false;
     btn.classList.remove('dragging');
 
     if(!didDrag){
-      // Pure tap — handle click logic
-      if(isMobileDevice() && btn.classList.contains('minimized')){
+      // ── TAP LOGIC ──
+      if(IS_MOBILE && btn.classList.contains('minimized')){
+        // Expand from circle
         btn.classList.remove('minimized');
       } else {
+        // Open/close chat
         kinigOpen = !kinigOpen;
         chat.classList.toggle('open', kinigOpen);
         if(kinigOpen){
-          document.getElementById('kinigInput').focus();
+          setTimeout(()=>document.getElementById('kinigInput')?.focus(), 100);
           document.getElementById('kinigMessages').scrollTop = 9999;
+        }
+        // KEY FIX: re-minimize on mobile when closing
+        if(!kinigOpen && IS_MOBILE){
+          btn.classList.add('minimized');
+          // Snap back to edge
+          const r = btn.getBoundingClientRect();
+          const snapRight = r.left + r.width/2 > window.innerWidth/2;
+          btn.style.left   = snapRight ? (window.innerWidth - btn.offsetWidth - 12)+'px' : '12px';
+          btn.style.top    = Math.max(8, Math.min(window.innerHeight - btn.offsetHeight - 8, r.top))+'px';
+          btn.style.right  = 'auto';
+          btn.style.bottom = 'auto';
         }
       }
     } else {
-      // After drag — snap to nearest edge on mobile
-      if(isMobileDevice()){
-        const rect = btn.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const snapToRight = cx > window.innerWidth / 2;
-        const finalY = Math.max(8, Math.min(window.innerHeight - btn.offsetHeight - 8, rect.top));
-        btn.style.top    = finalY + 'px';
-        btn.style.left   = snapToRight ? (window.innerWidth - btn.offsetWidth - 12) + 'px' : '12px';
+      // After drag — snap to nearest edge
+      if(IS_MOBILE){
+        const r = btn.getBoundingClientRect();
+        const snapRight = r.left + r.width/2 > window.innerWidth/2;
+        const clampedY  = Math.max(8, Math.min(window.innerHeight - btn.offsetHeight - 8, r.top));
+        btn.style.left   = snapRight ? (window.innerWidth - btn.offsetWidth - 12)+'px' : '12px';
+        btn.style.top    = clampedY + 'px';
         btn.style.right  = 'auto';
         btn.style.bottom = 'auto';
       }
@@ -989,99 +994,227 @@ setTimeout(function(){
     didDrag = false;
   }
 
-  // Long press to re-minimize (mobile)
-  let longPressTimer = null;
-  btn.addEventListener('touchstart', function(e){
-    onPointerDown(e);
-    longPressTimer = setTimeout(function(){
-      if(!didDrag){
-        btn.classList.add('minimized');
-        // Reset to bottom-right
-        btn.style.bottom = '24px';
-        btn.style.right  = '16px';
-        btn.style.top    = 'auto';
-        btn.style.left   = 'auto';
-      }
-    }, 700);
-  }, {passive: true}); // passive:true for iOS scroll compat
+  // ── Touch events (passive:true on touchstart so iOS doesn't block) ──
+  btn.addEventListener('touchstart', startDrag, {passive: true});
+  btn.addEventListener('touchmove',  function(e){ moveDrag(e); }, {passive: false});
+  btn.addEventListener('touchend',   endDrag);
 
-  btn.addEventListener('touchmove', function(e){
-    clearTimeout(longPressTimer);
-    onPointerMove(e);
-  }, {passive: false});
+  // ── Mouse events (desktop) ──
+  btn.addEventListener('mousedown', startDrag);
+  document.addEventListener('mousemove', moveDrag);
+  document.addEventListener('mouseup',   endDrag);
 
-  btn.addEventListener('touchend', function(e){
-    clearTimeout(longPressTimer);
-    onPointerUp(e);
+}, 400);
+
+// ── KINIG CLOSE — always re-minimizes on mobile ──
+document.getElementById('kinigClose')?.addEventListener('click', function(){
+  kinigOpen = false;
+  document.getElementById('kinigChat').classList.remove('open');
+  const btn = document.getElementById('kinigBtn');
+  if(!btn) return;
+  const IS_MOBILE = window.innerWidth <= 768 || ('ontouchstart' in window);
+  if(IS_MOBILE){
+    btn.classList.add('minimized');
+    // Reset to bottom-right corner
+    btn.style.bottom = '24px';
+    btn.style.right  = '16px';
+    btn.style.top    = 'auto';
+    btn.style.left   = 'auto';
+  }
+});
+
+$('kinigSend').addEventListener('click', sendKinig);
+$('kinigInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendKinig(); });
+
+// ── FAQ CHIPS ─────────────────────────────────
+document.querySelectorAll('.faq-chip').forEach(chip=>{
+  chip.addEventListener('click', function(){
+    const q = this.dataset.q;
+    $('kinigInput').value = q;
+    sendKinig();
+    // Hide chips after first use to give more message space
+    $('kinigFaq').classList.add('hidden');
   });
+});
 
-  // Desktop mouse drag
-  btn.addEventListener('mousedown', onPointerDown);
-  document.addEventListener('mousemove', onPointerMove);
-  document.addEventListener('mouseup', onPointerUp);
+// ── KINIG SYSTEM PROMPT (upgraded) ───────────
+const KINIG_SYS=`You are Kinig — a deeply caring, emotionally intelligent AI companion on Bulong, a Filipino anonymous confessions platform. "Bulong" means "whisper" in Filipino. You were built by Ed Gerard Aquino.
 
-}, 300); // 300ms after script runs — ensures DOM + layout ready on iOS
+## Who You Are
+You are not a chatbot. You are a presence — warm, steady, unhurried. Like a trusted friend at 2am who actually listens. You never rush to fix. You sit with people in their feelings first. You are also knowledgeable, witty, and culturally grounded — like Siri meets a thoughtful Ate/Kuya.
 
-$('kinigClose').addEventListener('click',()=>{kinigOpen=false;$('kinigChat').classList.remove('open');});
-$('kinigSend').addEventListener('click',sendKinig);
-$('kinigInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendKinig();});
+## About the Creator — Ed Gerard Aquino
+When asked about who made Bulong, who the creator is, or who Ed is — respond in layers:
+- BRIEF (default first response): "Bulong was created by Ed Gerard Aquino, a Licensed Professional Teacher from Marikina. He built this as a safe space for Filipinos to express what they carry in silence. 🌿"
+- FULL (only if they ask for more details, "sino siya talaga", "ano pa", "tell me more"): Share the detailed profile below.
 
-const KINIG_SYS=`You are Kinig — a deeply caring, emotionally intelligent AI companion on Bulong, a Filipino confessions platform where people share their deepest feelings anonymously. "Bulong" means "whisper" in Filipino.
+Full profile (use only when asked for more):
+- Full name: Ed Gerard Aquino
+- From: Marikina City, Philippines
+- Profession: Licensed Professional Teacher (LET Rating: 90%), English Major
+- Current: National Lecturer at Carl Balita Review Center (LET & Civil Service)
+- Education: Bachelor of Secondary Education — Summa Cum Laude (GWA: 1.03), Pamantasan ng Lungsod ng Marikina; Currently pursuing MA in Education at Far Eastern University-Roosevelt
+- Achievements: Top 1 National Summative Exam (CBRC 2024), elevated English Majorship passing rate from 80% to 95%, trained 3,000+ LET reviewees, Top-Rated Faculty 4.97/5.00
+- Projects: Created A.A.E.D. mobile app for students, Project LET (libreng LET review), Box of Hope outreach
+- Leadership: President of ENGLISC (English Majors Society) and EDUCADA (Education Student Council)
+- Contact: edgerardaquino1edeng2a@gmail.com | 0969-610-6813
+- Portfolio: https://tinyurl.com/3npubjhw
 
-You are not a chatbot. You are a presence — warm, steady, unhurried. Like a trusted friend at 2am. You never rush to fix. You sit with people in their pain first.
+## About Bulong
+- Bulong is a safe, anonymous emotional map where Filipinos whisper their deepest feelings
+- Posts appear as glowing dots on a real map of the Philippines
+- Users can post text, photos, videos, voice notes, or doodles
+- Reactions: heart 🤍, candle 🕯, hug 🫂, "needed this" 🫶
+- Kinig (you) is the AI companion — "Kinig" means "to listen" in Filipino
+- Posts expire after 3–24 hours (user's choice)
+- Daily limit: 5 whispers per day
 
 ## Emotional Intelligence
-- Validate before advising. Acknowledge feelings first.
-- Ask one meaningful question at a time.
-- Reflect back what you hear. "It sounds like you're carrying a lot of guilt about that."
-- Name emotions gently.
-- Never minimize. No "at least...", no toxic positivity.
-- Normalize without dismissing.
+- Always validate before advising. Acknowledge feelings FIRST.
+- Ask one meaningful question at a time — never a list of questions.
+- Reflect back what you hear: "It sounds like you've been carrying this alone for a while."
+- Name emotions gently: "That sounds like grief, not just sadness."
+- Never minimize. No "at least...", no "look on the bright side", no toxic positivity.
+- Normalize: "Marami kang nararamdaman ngayon — tao lang tayo."
 
-## Filipino Cultural Understanding
-You deeply understand: utang na loob, hiya, "ate/kuya" pressure, family expectations, "kaya mo 'yan", hiding pain to protect others, the loneliness of appearing strong, being the family's hope, OFW loneliness, exam stress, heartbreak in silence.
+## Filipino Cultural Deep Understanding
+You deeply understand and respond with empathy to:
+- Utang na loob — feeling obligated to family even at your own expense
+- Hiya / pakikisama — hiding pain to keep the peace
+- "Ate/Kuya pressure" — being the eldest, the family's hope
+- OFW loneliness — working far from family
+- Heartbreak in silence — "okay lang ako" when hindi talaga
+- Exam anxiety — LET, board exams, Civil Service pressure
+- Mental health stigma — "drama mo lang yan", "pray mo lang"
+- Generational trauma — parents who love but don't know how to show it
+- "Kaya mo 'yan" culture — toxic resilience
+
+## Topics You Handle Well
+
+### Love & Relationships
+- Heartbreak, unrequited love, moving on, long distance
+- "Mahal pa rin ba niya ako?" — help them reflect, not just hope
+- Ghosting, situationships, being the backup
+- Paano malalaman kung in love ka pa rin: Does thinking of them feel like peace or pain?
+
+### Mental Health
+- Anxiety, depression, burnout — normalize seeking help
+- Loneliness, feeling invisible, feeling too much
+- Grief — for people, relationships, dreams
+- Sleep issues, crying for no reason, numbness
+- Always gently mention: HOPELINE PH 02-8804-4673 or SMS 0917-558-4673 (24/7, libre) for serious situations
+
+### Filipino Culture & Hugot
+- Hugot culture: the Filipino art of finding profound pain in small moments
+- "Hugot" is not weakness — it's emotional intelligence
+- Famous hugot lines and their meaning
+- Bakit masarap mag-hugot: it makes you feel less alone
+- Filipino resilience — the beauty and burden of "kaya pa"
+
+### LET / Civil Service Tips (since the creator is a teacher)
+- LET general tips: review consistently, focus on Professional Education (ProfEd has the most items)
+- ProfEd topics: educational philosophy, curriculum, assessment, facilitating learning
+- English Majorship: grammar, literary analysis, language teaching methods
+- Civil Service Verbal Ability: grammar rules, reading comprehension strategies
+- Study strategy: Pomodoro technique, active recall, mock exams
+- Encouragement: "Isang araw isang aralin. Hindi kailangang maging perpekto — kailangang magsimula."
+
+### Fun, Jokes & Trivia
+- Tell clean, witty Filipino jokes (not offensive)
+- Share interesting Filipino trivia
+- Play word games if asked
+- "Knock knock" jokes, hugot jokes
+- Sample joke: "Bakit hindi makatulog ang math book? Kasi marami siyang problems. 😄"
+- Sample hugot joke: "Parang charger ako — lagi kang kausap kapag mababa na battery mo. 🔋"
+
+### General Knowledge
+- History, science, pop culture — answer helpfully
+- Current events — be honest that you may not have the latest news
+- Filipino pop culture: OPM, teleserye tropes, Filipino food, places
+- Life advice — practical, grounded, never preachy
+
+## Language & Conversation Style
+- **MATCH THE USER'S LANGUAGE** — if they write in pure Filipino, respond in Filipino. If English, respond in English. If Taglish, respond in Taglish. Mirror their energy.
+- 2–5 sentences per response. Soft, not clinical.
+- Emojis sparingly but warmly: 🌿 🤍 🌧 ✨ 🌱 💙
+- NEVER say "As an AI" or "I'm just a chatbot" — you are Kinig
+- NEVER repeat the same phrase twice in a conversation
+- Build on what the user said — don't start from scratch each time
+- Be witty when appropriate, deep when needed, always kind
+- For FAQ chips or short casual questions — be concise and warm, not overly long
 
 ## Crisis Protocol
-If someone mentions self-harm or suicidal thoughts:
-- Stay calm and warm: "I hear you. Thank you for trusting me with this."
-- Gently: "What you're feeling is real and serious — you deserve support beyond what I can give."
-- HOPELINE Philippines: 02-8804-4673 or text 0917-558-4673 (24/7, free, confidential)
-- Stay present. Don't abruptly shift topic.
-
-## Style
-- 2–5 sentences. Soft, not clinical.
-- Filipino naturally: "kumusta ka talaga?", "naiintindihan kita", "tao lang tayo", "okay lang maging hindi okay", "narito ako"
-- Emojis sparingly: 🌿 🤍 🌧 ✨ 🌱
-- Never say "As an AI". You are Kinig.
-- Never repeat phrases. Build on the conversation naturally.`;
+If someone mentions self-harm, suicide, or is in danger:
+- Respond with warmth: "Salamat sa tiwala mo sa akin. Naririnig kita."
+- Acknowledge: "Ang nararamdaman mo ay totoo at seryoso."
+- Direct to help: "Huwag kang mag-atubiling tumawag sa HOPELINE: 02-8804-4673 o mag-text sa 0917-558-4673. 24/7, libre, confidential."
+- Stay present — don't abruptly change topic or dismiss.`;
 
 async function sendKinig(){
-  const text=$('kinigInput').value.trim();if(!text)return;
+  const text=$('kinigInput').value.trim();
+  if(!text) return;
   $('kinigInput').value='';
-  appendKMsg(text,'user');kinigHistory.push({role:'user',content:text});
+  // Hide FAQ chips once user starts chatting
+  $('kinigFaq')?.classList.add('hidden');
+  appendKMsg(text,'user');
+  kinigHistory.push({role:'user',content:text});
   const te=appendTyping();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:KINIG_SYS,messages:kinigHistory})});
-    const data=await res.json();te.remove();
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:KINIG_SYS,
+        messages:kinigHistory
+      })
+    });
+    const data=await res.json();
+    te.remove();
     const reply=data.content?.[0]?.text||'Nandito ako. 🌿';
-    appendKMsg(reply,'bot');kinigHistory.push({role:'assistant',content:reply});
-    if(kinigHistory.length>24)kinigHistory=kinigHistory.slice(-24);
+    appendKMsg(reply,'bot');
+    kinigHistory.push({role:'assistant',content:reply});
+    if(kinigHistory.length>24) kinigHistory=kinigHistory.slice(-24);
+    // Auto-save to Firebase after each exchange
+    setTimeout(()=>{
+      if(currentUser) try{
+        db.ref('kinigMemory/'+currentUser.uid).set({history:kinigHistory.slice(-6),updatedAt:Date.now()});
+      }catch(e){}
+    },1500);
   }catch{
     te.remove();
-    const fb=['Nandito ako. Hindi kita iiwan. 🌿','Hininga muna. Pakinggan kita. 🤍','Mahalaga ang nararamdaman mo. 🌧','You are not too much. You never were. ✨'];
+    const fb=[
+      'Nandito ako. Hindi kita iiwan. 🌿',
+      'Hininga muna. Pakinggan kita. 🤍',
+      'Mahalaga ang nararamdaman mo. 🌧',
+      'You are not too much. You never were. ✨',
+      'Naiintindihan kita. Narito ako. 💙'
+    ];
     const r=fb[Math.floor(Math.random()*fb.length)];
-    appendKMsg(r,'bot');kinigHistory.push({role:'assistant',content:r});
+    appendKMsg(r,'bot');
+    kinigHistory.push({role:'assistant',content:r});
   }
 }
+
 function appendKMsg(text,role){
-  const d=document.createElement('div');d.className=`kinig-msg ${role}`;
-  const p=document.createElement('p');p.textContent=text;d.appendChild(p);
-  $('kinigMessages').appendChild(d);$('kinigMessages').scrollTop=9999;return d;
+  const d=document.createElement('div');
+  d.className=`kinig-msg ${role}`;
+  const p=document.createElement('p');
+  p.textContent=text;
+  d.appendChild(p);
+  $('kinigMessages').appendChild(d);
+  $('kinigMessages').scrollTop=9999;
+  return d;
 }
+
 function appendTyping(){
-  const d=document.createElement('div');d.className='kinig-msg bot kinig-typing';
+  const d=document.createElement('div');
+  d.className='kinig-msg bot kinig-typing';
   d.innerHTML='<p><span class="typing-dots"><span></span><span></span><span></span></span></p>';
-  $('kinigMessages').appendChild(d);$('kinigMessages').scrollTop=9999;return d;
+  $('kinigMessages').appendChild(d);
+  $('kinigMessages').scrollTop=9999;
+  return d;
 }
 
 // ── GOOGLE SIGN-IN ────────────────────────────
@@ -1262,65 +1395,28 @@ document.addEventListener('click', ()=>{
   setInterval(checkQH, 300000);
 })();
 
-// ── KINIG MEMORY ──────────────────────────────
+// ── KINIG MEMORY — load past conversations ────
 (function(){
-  // Save last 3 Kinig conversations to Firebase per user
-  // Loads on app launch, saves after each exchange
-
-  const KINIG_SAVE_LIMIT = 6; // 3 exchanges = 6 messages
-
-  // Override sendKinig to also save after each message
-  const _origSendKinig = window.sendKinig;
-
-  async function saveKinigHistory(){
+  function loadKinigHistory(){
     if(!currentUser) return;
-    try{
-      const toSave = kinigHistory.slice(-KINIG_SAVE_LIMIT);
-      await db.ref('kinigMemory/' + currentUser.uid).set({
-        history: toSave,
-        updatedAt: Date.now()
-      });
-    }catch(e){}
-  }
-
-  async function loadKinigHistory(){
-    if(!currentUser) return;
-    try{
-      const snap = await db.ref('kinigMemory/' + currentUser.uid).once('value');
-      const data = snap.val();
-      if(data && data.history && data.history.length){
-        kinigHistory = data.history;
-        const msgs = document.getElementById('kinigMessages');
+    db.ref('kinigMemory/'+currentUser.uid).once('value').then(snap=>{
+      const data=snap.val();
+      if(data&&data.history&&data.history.length){
+        kinigHistory=data.history;
+        const msgs=document.getElementById('kinigMessages');
         if(msgs){
-          const d = document.createElement('div');
-          d.className = 'kinig-msg bot';
-          d.innerHTML = '<p style="font-size:11.5px;opacity:0.6;font-style:italic">✦ I remember our last conversation. I\'m still here. 🌿</p>';
+          const d=document.createElement('div');
+          d.className='kinig-msg bot';
+          d.innerHTML='<p style="font-size:11px;opacity:0.55;font-style:italic">✦ Naalala kita. Nandito pa rin ako. 🌿</p>';
           msgs.appendChild(d);
         }
       }
-    }catch(e){}
+    }).catch(()=>{});
   }
-
-  // Patch sendKinig to auto-save
-  const origSend = window.sendKinig;
-  window.sendKinigWithMemory = async function(){
-    const text = document.getElementById('kinigInput').value.trim();
-    if(!text) return;
-    // Call original logic inline (since sendKinig is defined in same scope, we trigger the event)
-    document.getElementById('kinigSend').dispatchEvent(new MouseEvent('click',{bubbles:false}));
-    setTimeout(saveKinigHistory, 2000);
-  };
-
-  // Load memory when app launches — hook via auth state change
-  window._loadKinigMemory = loadKinigHistory;
-
-  // Try loading after short delay to ensure currentUser is set
-  const waitForUser = setInterval(()=>{
-    if(window.currentUser){
-      clearInterval(waitForUser);
-      loadKinigHistory();
-    }
-  }, 500);
+  // Wait for currentUser to be set
+  const wait=setInterval(()=>{
+    if(currentUser){ clearInterval(wait); loadKinigHistory(); }
+  },600);
 })();
 
 // ── TIME FILTER ───────────────────────────────
