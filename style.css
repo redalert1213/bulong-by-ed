@@ -854,3 +854,14 @@ body { -webkit-overflow-scrolling: touch; }
 .kinig-faq.hidden{display:none;}
 
 /* ── KINIG FAQ CHIPS end ──────────────────────*/
+
+/* ── SHARE BUTTON ─────────────────────────────*/
+.share-btn{
+  background:linear-gradient(135deg,rgba(107,158,122,0.15),rgba(201,168,196,0.15)) !important;
+  border-color:rgba(107,158,122,0.3) !important;
+  font-size:15px;
+}
+.share-btn:hover{
+  background:linear-gradient(135deg,rgba(107,158,122,0.28),rgba(201,168,196,0.28)) !important;
+  transform:translateY(-1px);
+}
