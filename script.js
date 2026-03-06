@@ -1032,9 +1032,16 @@ document.querySelectorAll('.faq-chip').forEach(chip=>{
     const q = this.dataset.q;
     $('kinigInput').value = q;
     sendKinig();
-    // Hide chips after first use to give more message space
-    $('kinigFaq').classList.add('hidden');
+    $('kinigFaq').style.display = 'none';
   });
+});
+
+// Also hide chips when user starts typing manually
+$('kinigInput').addEventListener('input', function(){
+  if(this.value.length > 0){
+    const faq = $('kinigFaq');
+    if(faq) faq.style.display = 'none';
+  }
 });
 
 // ── KINIG SYSTEM PROMPT (upgraded) ───────────
@@ -1155,14 +1162,19 @@ async function sendKinig(){
   if(!text) return;
   $('kinigInput').value='';
   // Hide FAQ chips once user starts chatting
-  $('kinigFaq')?.classList.add('hidden');
+  const faqEl = $('kinigFaq');
+  if(faqEl) faqEl.style.display = 'none';
   appendKMsg(text,'user');
   kinigHistory.push({role:'user',content:text});
   const te=appendTyping();
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-allowed':'true'
+      },
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
@@ -1172,6 +1184,14 @@ async function sendKinig(){
     });
     const data=await res.json();
     te.remove();
+    // Check for API error in response
+    if(data.error){
+      console.error('Kinig API error:',data.error);
+      const r='May nangyaring mali. Subukan ulit mamaya. 🌿';
+      appendKMsg(r,'bot');
+      kinigHistory.push({role:'assistant',content:r});
+      return;
+    }
     const reply=data.content?.[0]?.text||'Nandito ako. 🌿';
     appendKMsg(reply,'bot');
     kinigHistory.push({role:'assistant',content:reply});
