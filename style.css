@@ -865,3 +865,45 @@ body { -webkit-overflow-scrolling: touch; }
   background:linear-gradient(135deg,rgba(107,158,122,0.28),rgba(201,168,196,0.28)) !important;
   transform:translateY(-1px);
 }
+
+/* ── SUBSCRIPTION SECTION ─────────────────────*/
+.subscription-block{margin-bottom:18px;}
+
+.sub-active{
+  background:linear-gradient(135deg,rgba(107,158,122,0.12),rgba(201,168,196,0.1));
+  border:1px solid rgba(107,158,122,0.25);
+  border-radius:var(--radius-sm);
+  padding:14px 16px;
+}
+.sub-active-badge{
+  font-size:13px;font-weight:600;
+  color:var(--sage-l);
+  letter-spacing:0.06em;
+  margin-bottom:6px;
+}
+.sub-active-desc{
+  font-size:12px;color:var(--muted);
+  line-height:1.6;margin:0;
+}
+.sub-active-desc strong{color:var(--sage-l);}
+
+.sub-redeem{display:flex;flex-direction:column;gap:8px;}
+.sub-redeem-label{font-size:12px;color:var(--muted);margin:0;}
+.sub-input-row{display:flex;gap:8px;align-items:center;}
+.sub-input{flex:1;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;}
+.sub-redeem-btn{
+  padding:9px 14px;
+  border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,var(--sage),var(--mauve));
+  color:white;border:none;
+  font-family:var(--fb);font-size:13px;font-weight:500;
+  cursor:pointer;white-space:nowrap;
+  transition:all 0.2s;
+  flex-shrink:0;
+}
+.sub-redeem-btn:hover{opacity:0.88;transform:translateY(-1px);}
+.sub-redeem-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.sub-hint{font-size:11px;color:var(--muted);font-style:italic;margin:0;}
+
+/* Limit bar hidden when unlimited */
+.post-limit-bar.hidden{display:none;}
