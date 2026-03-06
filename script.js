@@ -234,7 +234,7 @@ function totalReacts(c){ const r=c.reactions||{}; return (r.heart||0)+(r.candle|
   draw();
 })();
 
-// ── CONSTELLATION CANVAS ──────────────────────
+// ── CONSTELLATION CANVAS + SHOOTING STARS ─────
 (function(){
   const canvas=$('constellationCanvas');
   if(!canvas) return;
@@ -266,6 +266,33 @@ function totalReacts(c){ const r=c.reactions||{}; return (r.heart||0)+(r.candle|
   }
   initStars();addEventListener('resize',initStars);
 
+  // ── Shooting stars ──────────────────────────
+  let shooters=[];
+  function spawnShooter(){
+    const angle=Math.PI/6+Math.random()*Math.PI/6; // 30-60 degrees
+    const speed=6+Math.random()*6;
+    shooters.push({
+      x:Math.random()*canvas.width*0.7,
+      y:Math.random()*canvas.height*0.4,
+      dx:Math.cos(angle)*speed,
+      dy:Math.sin(angle)*speed,
+      len:80+Math.random()*120,
+      a:1,
+      color:STAR_COLS[~~(Math.random()*STAR_COLS.length)],
+      life:1
+    });
+  }
+  // Spawn every 8-18 seconds randomly
+  function scheduleShooter(){
+    setTimeout(()=>{
+      spawnShooter();
+      scheduleShooter();
+    }, 8000+Math.random()*10000);
+  }
+  scheduleShooter();
+  // Also spawn one early
+  setTimeout(spawnShooter, 2500);
+
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -291,20 +318,39 @@ function totalReacts(c){ const r=c.reactions||{}; return (r.heart||0)+(r.candle|
     stars.forEach(s=>{
       s.tw+=s.tws;
       const al=s.a*(0.5+0.5*Math.sin(s.tw));
-      // Star glow
       const g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*3);
       g.addColorStop(0,s.c+'88');g.addColorStop(1,s.c+'00');
       ctx.beginPath();ctx.arc(s.x,s.y,s.r*3,0,Math.PI*2);ctx.fillStyle=g;ctx.globalAlpha=al*0.35;ctx.fill();
-      // Star core
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.c;ctx.globalAlpha=al;ctx.fill();
-      // Star cross sparkle
       ctx.globalAlpha=al*0.5;ctx.strokeStyle=s.c;ctx.lineWidth=0.5;
       ctx.beginPath();ctx.moveTo(s.x-s.r*2.2,s.y);ctx.lineTo(s.x+s.r*2.2,s.y);ctx.stroke();
       ctx.beginPath();ctx.moveTo(s.x,s.y-s.r*2.2);ctx.lineTo(s.x,s.y+s.r*2.2);ctx.stroke();
-      // Move
       s.x+=s.dx;s.y+=s.dy;
       if(s.x<0||s.x>canvas.width)s.dx*=-1;
       if(s.y<0||s.y>canvas.height)s.dy*=-1;
+    });
+
+    // Draw shooting stars
+    shooters=shooters.filter(s=>s.life>0);
+    shooters.forEach(s=>{
+      s.life-=0.022;
+      s.x+=s.dx;s.y+=s.dy;
+      const alpha=s.life*0.9;
+      const grad=ctx.createLinearGradient(s.x,s.y,s.x-s.dx*(s.len/8),s.y-s.dy*(s.len/8));
+      grad.addColorStop(0,s.color+Math.round(alpha*255).toString(16).padStart(2,'0'));
+      grad.addColorStop(0.3,s.color+Math.round(alpha*120).toString(16).padStart(2,'0'));
+      grad.addColorStop(1,s.color+'00');
+      ctx.beginPath();
+      ctx.moveTo(s.x,s.y);
+      ctx.lineTo(s.x-s.dx*(s.len/8),s.y-s.dy*(s.len/8));
+      ctx.strokeStyle=grad;
+      ctx.globalAlpha=alpha;
+      ctx.lineWidth=1.5;
+      ctx.lineCap='round';
+      ctx.stroke();
+      // Bright head
+      ctx.beginPath();ctx.arc(s.x,s.y,1.8,0,Math.PI*2);
+      ctx.fillStyle='#ffffff';ctx.globalAlpha=alpha;ctx.fill();
     });
 
     ctx.globalAlpha=1;
@@ -323,8 +369,8 @@ const Sound=(function(){
   function tone(freq,type,vol,attack,decay,delay=0){
     if(!actx||!unlocked)return;
     try{
-      const o=actx.createOscillator(),g=actx.createGain(),rev=actx.createGain();
-      o.connect(g);g.connect(rev);rev.connect(actx.destination);
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.connect(g);g.connect(actx.destination);
       o.type=type;o.frequency.value=freq;
       const now=actx.currentTime+delay;
       g.gain.setValueAtTime(0,now);
@@ -333,13 +379,55 @@ const Sound=(function(){
       o.start(now);o.stop(now+attack+decay+0.05);
     }catch(e){}
   }
+  function noise(vol,duration,delay=0){
+    if(!actx||!unlocked)return;
+    try{
+      const buf=actx.createBuffer(1,actx.sampleRate*duration,actx.sampleRate);
+      const data=buf.getChannelData(0);
+      for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*0.3;
+      const src=actx.createBufferSource();
+      const g=actx.createGain();
+      const f=actx.createBiquadFilter();
+      f.type='bandpass';f.frequency.value=800;f.Q.value=0.5;
+      src.buffer=buf;src.connect(f);f.connect(g);g.connect(actx.destination);
+      const now=actx.currentTime+delay;
+      g.gain.setValueAtTime(vol,now);
+      g.gain.exponentialRampToValueAtTime(0.0001,now+duration);
+      src.start(now);src.stop(now+duration+0.05);
+    }catch(e){}
+  }
   return{
-    click(){tone(880,'sine',0.04,0.008,0.14);},
-    whisper(){tone(523,'sine',0.06,0.01,0.35);tone(659,'sine',0.04,0.01,0.35,0.14);tone(784,'sine',0.035,0.01,0.45,0.26);},
-    welcome(){tone(392,'sine',0.04,0.02,0.55);tone(523,'sine',0.04,0.02,0.55,0.2);tone(659,'sine',0.035,0.02,0.65,0.36);},
-    react(){tone(1046,'sine',0.035,0.005,0.12);},
-    panel(){tone(330,'sine',0.025,0.008,0.18);},
-    notif(){tone(698,'sine',0.035,0.008,0.1);tone(880,'sine',0.025,0.008,0.1,0.11);},
+    click(){ tone(880,'sine',0.04,0.008,0.14); },
+    whisper(){ tone(523,'sine',0.06,0.01,0.35);tone(659,'sine',0.04,0.01,0.35,0.14);tone(784,'sine',0.035,0.01,0.45,0.26); },
+    welcome(){ tone(392,'sine',0.04,0.02,0.55);tone(523,'sine',0.04,0.02,0.55,0.2);tone(659,'sine',0.035,0.02,0.65,0.36); },
+    panel(){ tone(330,'sine',0.025,0.008,0.18); },
+    notif(){ tone(698,'sine',0.035,0.008,0.1);tone(880,'sine',0.025,0.008,0.1,0.11); },
+    // ── Per-reaction unique sounds ──
+    react(type){
+      if(type==='heart'){
+        // Heartbeat — two soft thumps
+        tone(80,'sine',0.09,0.01,0.08);
+        tone(70,'sine',0.07,0.01,0.1,0.12);
+        tone(880,'sine',0.025,0.005,0.1,0.05);
+      } else if(type==='candle'){
+        // Candle flicker — soft noise burst + warm low tone
+        noise(0.04,0.18);
+        tone(220,'sine',0.03,0.02,0.4);
+        tone(330,'triangle',0.015,0.02,0.3,0.1);
+      } else if(type==='hug'){
+        // Hug — warm enveloping chord
+        tone(392,'sine',0.04,0.04,0.5);
+        tone(494,'sine',0.03,0.04,0.5,0.06);
+        tone(587,'sine',0.025,0.04,0.55,0.12);
+      } else if(type==='needed'){
+        // I needed this — gentle upward chime
+        tone(659,'sine',0.04,0.01,0.25);
+        tone(784,'sine',0.035,0.01,0.28,0.14);
+        tone(1047,'sine',0.03,0.01,0.35,0.26);
+      } else {
+        tone(1046,'sine',0.035,0.005,0.12);
+      }
+    },
   };
 })();
 
@@ -440,6 +528,7 @@ function startConfessionsListener(){
     confessions=snap.val()||{};
     const now=Date.now();
     Object.keys(confessions).forEach(k=>{
+      if(confessions[k].permanent) return; // skip permanent fake whispers
       if(confessions[k].expiresAt&&confessions[k].expiresAt<now){
         delete confessions[k];
         db.ref('confessions/'+k).remove();
@@ -471,6 +560,8 @@ function updateMoodCounter(){
 // ── EMOTIONAL MAP GLOWS ───────────────────────
 function px(lat,lng){ const p=map.latLngToContainerPoint([lat,lng]);return{x:p.x,y:p.y}; }
 
+const _seenDotKeys = new Set(); // track dots already shown
+
 function renderGlows(){
   if(!mapReady||!glowEl) return;
   glowEl.innerHTML='';
@@ -478,12 +569,19 @@ function renderGlows(){
     if(activeMood!=='all'&&c.mood!==activeMood) return;
     const{x,y}=px(c.lat,c.lng);
     if(x<-60||y<-60||x>innerWidth+60||y>innerHeight+60) return;
-    // Size based on reactions — more reactions = slightly bigger glow
     const reacts=totalReacts(c);
     const sz=16+Math.min(reacts*1.5,14);
     const el=document.createElement('div');
     el.className='confession-glow';
+    const isNew = !_seenDotKeys.has(key);
     el.style.cssText=`left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${c.moodColor};box-shadow:0 0 ${sz}px ${sz/2}px ${c.moodColor}88,0 0 ${sz*2}px ${sz}px ${c.moodColor}33;animation-delay:${(Math.random()*2).toFixed(2)}s;`;
+    if(isNew){
+      el.style.opacity='0';
+      el.style.transform='scale(0.3)';
+      el.style.transition='opacity 0.7s ease, transform 0.7s cubic-bezier(0.34,1.56,0.64,1)';
+      setTimeout(()=>{ el.style.opacity='1'; el.style.transform='scale(1)'; }, 80);
+      _seenDotKeys.add(key);
+    }
     el.dataset.key=key;
     el.addEventListener('click',e=>{e.stopPropagation();tryOpenPopup(key);});
     glowEl.appendChild(el);
@@ -491,9 +589,44 @@ function renderGlows(){
 }
 
 // ── MOOD FILTER ───────────────────────────────
+const MOOD_NAV_COLORS={
+  all:       null,
+  melancholy:'rgba(184,160,179,0.18)',
+  longing:   'rgba(132,169,140,0.18)',
+  relief:    'rgba(168,196,162,0.18)',
+  love:      'rgba(232,165,176,0.18)',
+  grief:     'rgba(123,141,176,0.18)',
+  hope:      'rgba(240,201,127,0.18)',
+};
+const MOOD_NAV_BORDER={
+  all:       null,
+  melancholy:'rgba(184,160,179,0.35)',
+  longing:   'rgba(132,169,140,0.35)',
+  relief:    'rgba(168,196,162,0.35)',
+  love:      'rgba(232,165,176,0.35)',
+  grief:     'rgba(123,141,176,0.35)',
+  hope:      'rgba(240,201,127,0.35)',
+};
+function applyNavMoodColor(mood){
+  const navbar=document.querySelector('.navbar');
+  if(!navbar) return;
+  const bg=MOOD_NAV_COLORS[mood];
+  const border=MOOD_NAV_BORDER[mood];
+  if(bg){
+    navbar.style.transition='background 0.6s ease, border-bottom-color 0.6s ease';
+    navbar.style.background=`linear-gradient(135deg, var(--glass) 60%, ${bg})`;
+    navbar.style.borderBottomColor=border;
+  } else {
+    navbar.style.background='';
+    navbar.style.borderBottomColor='';
+  }
+}
 document.querySelectorAll('.mf-btn').forEach(btn=>btn.addEventListener('click',()=>{
   document.querySelectorAll('.mf-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');activeMood=btn.dataset.mood;renderGlows();
+  btn.classList.add('active');
+  activeMood=btn.dataset.mood;
+  renderGlows();
+  applyNavMoodColor(activeMood);
 }));
 
 // ── WHISPER OF THE DAY ────────────────────────
@@ -564,6 +697,125 @@ function openPopup(key){
 }
 $('popupClose').addEventListener('click',()=>{$('confessionPopup').classList.remove('open');activeId=null;});
 
+// ── WHISPER CARD SHARE ────────────────────────
+$('shareWhisperBtn').addEventListener('click',()=>{
+  if(!activeId) return;
+  const c = confessions[activeId];
+  if(!c) return;
+
+  const MOOD_META_SHARE = {
+    melancholy:{emoji:'🌧',color:'#B8A0B3',bg:'#1a1f2e'},
+    longing:   {emoji:'🌿',color:'#84A98C',bg:'#192219'},
+    relief:    {emoji:'🌱',color:'#A8C4A2',bg:'#1a2218'},
+    love:      {emoji:'🌸',color:'#E8A5B0',bg:'#2a1820'},
+    grief:     {emoji:'🌊',color:'#7B8DB0',bg:'#1a1f2e'},
+    hope:      {emoji:'✨',color:'#F0C97F',bg:'#2a2518'},
+  };
+  const meta = MOOD_META_SHARE[c.mood] || {emoji:'🌿',color:'#84A98C',bg:'#1a2219'};
+
+  const W=1080, H=1080;
+  const canvas=document.createElement('canvas');
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  // Background
+  const bgGrad=ctx.createLinearGradient(0,0,W,H);
+  bgGrad.addColorStop(0,'#0d1117');
+  bgGrad.addColorStop(0.5,meta.bg);
+  bgGrad.addColorStop(1,'#0d1117');
+  ctx.fillStyle=bgGrad;
+  ctx.fillRect(0,0,W,H);
+
+  // Mood glow orb
+  const orb=ctx.createRadialGradient(W*0.15,H*0.2,0,W*0.15,H*0.2,W*0.45);
+  orb.addColorStop(0,meta.color+'33');
+  orb.addColorStop(1,meta.color+'00');
+  ctx.fillStyle=orb;
+  ctx.fillRect(0,0,W,H);
+
+  // Subtle grain texture
+  for(let i=0;i<4000;i++){
+    ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.015})`;
+    ctx.fillRect(Math.random()*W,Math.random()*H,1,1);
+  }
+
+  // Top accent line
+  const lineGrad=ctx.createLinearGradient(80,0,W-80,0);
+  lineGrad.addColorStop(0,'rgba(255,255,255,0)');
+  lineGrad.addColorStop(0.5,meta.color+'88');
+  lineGrad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.strokeStyle=lineGrad;
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(80,90);ctx.lineTo(W-80,90);ctx.stroke();
+
+  // Mood emoji + label
+  ctx.font='52px serif';
+  ctx.fillText(meta.emoji,80,175);
+  ctx.font='500 28px DM Sans, sans-serif';
+  ctx.fillStyle=meta.color+'cc';
+  ctx.letterSpacing='6px';
+  ctx.fillText((c.mood||'whisper').toUpperCase(),148,172);
+
+  // Divider dot
+  ctx.beginPath();ctx.arc(W/2,230,3,0,Math.PI*2);
+  ctx.fillStyle=meta.color+'66';ctx.fill();
+
+  // Main whisper text — word wrap
+  ctx.fillStyle='rgba(232,228,222,0.92)';
+  ctx.font='300 52px Cormorant Garamond, Georgia, serif';
+  ctx.textAlign='center';
+  const words=(c.content||'📷 Media whisper').split(' ');
+  const maxW=W-180;
+  let line='', lines=[], lineH=72;
+  words.forEach(w=>{
+    const test=line+w+' ';
+    if(ctx.measureText(test).width>maxW && line){lines.push(line.trim());line=w+' ';}
+    else line=test;
+  });
+  lines.push(line.trim());
+  // Limit lines & add ellipsis
+  if(lines.length>7){lines=lines.slice(0,7);lines[6]+='...';}
+  const totalTextH=lines.length*lineH;
+  const textStartY=H/2-totalTextH/2+30;
+  lines.forEach((l,i)=>{ctx.fillText(l,W/2,textStartY+i*lineH);});
+
+  // Author
+  ctx.font='400 26px DM Sans, sans-serif';
+  ctx.fillStyle='rgba(216,212,206,0.4)';
+  ctx.fillText('— '+(c.displayName||'Anonymous'), W/2, textStartY+lines.length*lineH+50);
+
+  // Bottom branding
+  ctx.textAlign='left';
+  ctx.font='italic 500 38px Cormorant Garamond, Georgia, serif';
+  const brandGrad=ctx.createLinearGradient(80,0,300,0);
+  brandGrad.addColorStop(0,'#A8C4A2');
+  brandGrad.addColorStop(1,'#C9A8C4');
+  ctx.fillStyle=brandGrad;
+  ctx.fillText('Bulong',80,H-80);
+
+  ctx.font='400 22px DM Sans, sans-serif';
+  ctx.fillStyle='rgba(216,212,206,0.3)';
+  ctx.fillText('Say it safely.',80,H-48);
+
+  // Bottom right — site URL
+  ctx.textAlign='right';
+  ctx.font='400 20px DM Sans, sans-serif';
+  ctx.fillStyle='rgba(216,212,206,0.2)';
+  ctx.fillText('redalert1213.github.io/bulong-by-ed',W-80,H-48);
+
+  // Bottom accent line
+  ctx.strokeStyle=lineGrad;
+  ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(80,H-110);ctx.lineTo(W-80,H-110);ctx.stroke();
+
+  // Download
+  const link=document.createElement('a');
+  link.download='bulong-whisper.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+  showToast('Whisper card downloaded! Share it anywhere 🌿');
+});
+
 // Delete whisper
 $('deleteWhisperBtn').addEventListener('click',async()=>{
   if(!activeId||!currentUser)return;
@@ -592,7 +844,7 @@ document.querySelectorAll('.react-btn').forEach(btn=>btn.addEventListener('click
   if(!reactions[r])reactions[r]=0;
   if(already){reactions[r]=Math.max(0,reactions[r]-1);if(reactedBy[uid])delete reactedBy[uid][r];}
   else{
-    reactions[r]++;Sound.react();
+    reactions[r]++;Sound.react(r);
     if(!reactedBy[uid])reactedBy[uid]={};
     reactedBy[uid][r]=true;
     if(c.authorUid&&c.authorUid!==uid){
@@ -1256,9 +1508,9 @@ If someone mentions self-harm, suicide, or is in danger:
 - Stay present — don't abruptly change topic or dismiss.`;
 
 // ── KINIG API KEY ─────────────────────────────
-// Replace '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' with your actual Groq API key
+// Replace 'YOUR_GROQ_API_KEY_HERE' with your actual Groq API key
 // Get one FREE at: https://console.groq.com → API Keys
-const KINIG_API_KEY = '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';
+const KINIG_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
 
 async function sendKinig(){
   const text=$('kinigInput').value.trim();
