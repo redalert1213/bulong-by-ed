@@ -953,6 +953,15 @@ document.querySelectorAll('.mood-btn').forEach(btn=>btn.addEventListener('click'
 $('confessionText').addEventListener('input',function(){$('charCount').textContent=this.value.length;});
 
 function updateLimitUI(){
+  // If subscription active — show unlimited, hide bar
+  const limitBar = document.querySelector('.post-limit-bar');
+  if(isSubscriptionActive()){
+    if(limitBar) limitBar.classList.add('hidden');
+    const btn=$('submitConfession');
+    if(btn) btn.disabled=false;
+    return;
+  }
+  if(limitBar) limitBar.classList.remove('hidden');
   const daily=loadDaily(),used=daily.count,left=MAX_POSTS-used;
   $('postLimitFill').style.width=((used/MAX_POSTS)*100)+'%';
   const label=$('postsLeftLabel');label.className='posts-left-text';
@@ -966,7 +975,7 @@ $('submitConfession').addEventListener('click',submitConfession);
 
 async function submitConfession(){
   const daily=loadDaily();
-  if(daily.count>=MAX_POSTS){showToast('5 whispers na ngayon 🌿 Bumalik bukas.');return;}
+  if(!isSubscriptionActive() && daily.count>=MAX_POSTS){showToast('5 whispers na ngayon 🌿 Bumalik bukas.');return;}
   const isAnon=$('anonCheck').checked;
   const author=(isAnon||!userProfile?.displayName)?'Anonymous':userProfile.displayName;
 
@@ -1181,7 +1190,105 @@ function loadProfilePanel(){
     $('avatarRemoveBtn').classList.add('hidden');
   }
   document.querySelectorAll('#colorSwatches .swatch').forEach(s=>s.classList.toggle('active',s.dataset.color===profileColorChoice));
+  // Load subscription status
+  loadSubscriptionUI();
 }
+
+// ── SUBSCRIPTION / VOUCHER SYSTEM ────────────
+const VALID_VOUCHERS = {
+  'BULONG-XL-2026-ED01': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED02': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED03': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED04': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED05': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED06': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED07': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED08': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED09': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED10': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED11': { days: 30, label: 'Early Access Gift' },
+  'BULONG-XL-2026-ED12': { days: 30, label: 'Early Access Gift' },
+};
+
+function isSubscriptionActive(){
+  if(!currentUser) return false;
+  const sub = userProfile?.subscription;
+  if(!sub || !sub.expiresAt) return false;
+  return sub.expiresAt > Date.now();
+}
+
+function getSubscriptionExpiry(){
+  const sub = userProfile?.subscription;
+  if(!sub || !sub.expiresAt) return null;
+  return new Date(sub.expiresAt).toLocaleDateString('en-PH',{month:'long',day:'numeric',year:'numeric'});
+}
+
+function loadSubscriptionUI(){
+  const activeEl  = $('subActive');
+  const redeemEl  = $('subRedeem');
+  const limitBar  = document.querySelector('.post-limit-bar');
+  if(!activeEl || !redeemEl) return;
+
+  if(isSubscriptionActive()){
+    activeEl.classList.remove('hidden');
+    redeemEl.classList.add('hidden');
+    $('subExpiry').textContent = getSubscriptionExpiry() || '—';
+    if(limitBar) limitBar.classList.add('hidden');
+  } else {
+    activeEl.classList.add('hidden');
+    redeemEl.classList.remove('hidden');
+    if(limitBar) limitBar.classList.remove('hidden');
+  }
+}
+
+// Redeem voucher
+$('redeemVoucherBtn').addEventListener('click', async()=>{
+  if(!currentUser){ showToast('Please log in first.'); return; }
+  const btn = $('redeemVoucherBtn');
+  const raw = ($('voucherInput').value||'').trim().toUpperCase();
+  if(!raw){ showToast('Please enter a voucher key. 🌿'); return; }
+
+  const voucher = VALID_VOUCHERS[raw];
+  if(!voucher){ showToast('Invalid voucher key. Please check and try again.'); return; }
+
+  // Check if already used by this user
+  const sub = userProfile?.subscription;
+  if(sub && sub.expiresAt > Date.now()){
+    showToast('You already have an active subscription! 🌿'); return;
+  }
+
+  // Check if voucher already claimed by another user
+  const claimSnap = await db.ref('vouchers/'+raw).once('value');
+  const claim = claimSnap.val();
+  if(claim && claim.uid && claim.uid !== currentUser.uid){
+    showToast('This voucher has already been used.'); return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Activating...';
+
+  try {
+    const expiresAt = Date.now() + (voucher.days * 24 * 60 * 60 * 1000);
+    const subData = { code: raw, label: voucher.label, activatedAt: Date.now(), expiresAt, uid: currentUser.uid };
+
+    // Save to user profile
+    await db.ref('users/'+currentUser.uid+'/subscription').set(subData);
+    // Mark voucher as claimed
+    await db.ref('vouchers/'+raw).set({ uid: currentUser.uid, claimedAt: Date.now() });
+
+    // Update local profile
+    userProfile.subscription = subData;
+    loadSubscriptionUI();
+    updateLimitUI();
+    showToast('✦ Unlimited access activated! 30 days. 🌿');
+    $('voucherInput').value = '';
+  } catch(e){
+    showToast('Something went wrong. Please try again.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Redeem';
+});
 
 // Avatar upload
 $('avatarUploadBtn').addEventListener('click',()=>$('avatarFile').click());
@@ -1651,6 +1758,12 @@ function launchApp(user,profile){
   updateNavProfile(); updateLimitUI(); initMap(); listenNotifs();
   if(window._dismissLoader) window._dismissLoader();
   setTimeout(()=>{ showToast('Welcome to Bulong. You are safe here. 🌿'); Sound.welcome(); }, 800);
+  // Keep subscription data in sync
+  db.ref('users/'+user.uid+'/subscription').on('value', snap=>{
+    if(!userProfile) return;
+    userProfile.subscription = snap.val();
+    updateLimitUI();
+  });
 }
 
 /* ══════════════════════════════════════════════
