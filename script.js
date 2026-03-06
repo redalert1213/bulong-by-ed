@@ -1157,6 +1157,11 @@ If someone mentions self-harm, suicide, or is in danger:
 - Direct to help: "Huwag kang mag-atubiling tumawag sa HOPELINE: 02-8804-4673 o mag-text sa 0917-558-4673. 24/7, libre, confidential."
 - Stay present — don't abruptly change topic or dismiss.`;
 
+// ── KINIG API KEY ─────────────────────────────
+// Replace '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' with your actual Groq API key
+// Get one FREE at: https://console.groq.com → API Keys
+const KINIG_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
+
 async function sendKinig(){
   const text=$('kinigInput').value.trim();
   if(!text) return;
@@ -1168,31 +1173,29 @@ async function sendKinig(){
   kinigHistory.push({role:'user',content:text});
   const te=appendTyping();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-allowed':'true'
+        'Authorization':'Bearer '+KINIG_API_KEY
       },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
+        model:'llama-3.3-70b-versatile',
         max_tokens:1000,
-        system:KINIG_SYS,
-        messages:kinigHistory
+        messages:[
+          {role:'system', content:KINIG_SYS},
+          ...kinigHistory
+        ]
       })
     });
     const data=await res.json();
     te.remove();
-    // Check for API error in response
     if(data.error){
       console.error('Kinig API error:',data.error);
-      const r='May nangyaring mali. Subukan ulit mamaya. 🌿';
-      appendKMsg(r,'bot');
-      kinigHistory.push({role:'assistant',content:r});
+      appendKMsg('May error: '+data.error.message,'bot');
       return;
     }
-    const reply=data.content?.[0]?.text||'Nandito ako. 🌿';
+    const reply=data.choices?.[0]?.message?.content||'Nandito ako. 🌿';
     appendKMsg(reply,'bot');
     kinigHistory.push({role:'assistant',content:reply});
     if(kinigHistory.length>24) kinigHistory=kinigHistory.slice(-24);
@@ -1202,18 +1205,10 @@ async function sendKinig(){
         db.ref('kinigMemory/'+currentUser.uid).set({history:kinigHistory.slice(-6),updatedAt:Date.now()});
       }catch(e){}
     },1500);
-  }catch{
+  }catch(err){
+    console.error('Kinig fetch error:', err);
     te.remove();
-    const fb=[
-      'Nandito ako. Hindi kita iiwan. 🌿',
-      'Hininga muna. Pakinggan kita. 🤍',
-      'Mahalaga ang nararamdaman mo. 🌧',
-      'You are not too much. You never were. ✨',
-      'Naiintindihan kita. Narito ako. 💙'
-    ];
-    const r=fb[Math.floor(Math.random()*fb.length)];
-    appendKMsg(r,'bot');
-    kinigHistory.push({role:'assistant',content:r});
+    appendKMsg('Hindi ako makakonekta ngayon. Check your internet or API key. 🌿','bot');
   }
 }
 
