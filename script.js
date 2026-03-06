@@ -1256,9 +1256,9 @@ If someone mentions self-harm, suicide, or is in danger:
 - Stay present — don't abruptly change topic or dismiss.`;
 
 // ── KINIG API KEY ─────────────────────────────
-// Replace 'YOUR_GROQ_API_KEY_HERE' with your actual Groq API key
+// Replace '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' with your actual Groq API key
 // Get one FREE at: https://console.groq.com → API Keys
-const KINIG_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
+const KINIG_API_KEY = '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';
 
 async function sendKinig(){
   const text=$('kinigInput').value.trim();
