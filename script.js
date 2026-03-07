@@ -1194,7 +1194,7 @@ function loadProfilePanel(){
   loadSubscriptionUI();
 }
 
-// ── BULONG RADIO ──────────────────────────────
+// ── SALIW ─────────────────────────────────────
 const MUSIC_PLAYLIST = {
   sad: [
     { title: 'Sad Background',  url: 'https://cdn.pixabay.com/audio/2026/02/13/audio_05a315df51.mp3' },
@@ -1223,112 +1223,125 @@ const MUSIC_PLAYLIST = {
   ],
 };
 
-const MOOD_LABELS = {
-  sad:'sad', lonely:'lonely', calm:'calm', reflective:'reflective', hopeful:'hopeful'
-};
-
-let musicAudio = new Audio();
+let musicAudio       = new Audio();
 let musicCurrentMood = null;
-let musicCurrentIndex = 0;
-let musicPlaying = false;
+let musicCurrentIdx  = 0;
+let musicPlaying     = false;
 
-function openRadioPanel(){
+// Open modal
+function openSaliw(){
+  // Show right screen based on state
   if(musicCurrentMood){
-    $('radioMoodScreen').classList.add('hidden');
-    $('radioPlayerScreen').classList.remove('hidden');
+    $('saliwMoodScreen').classList.add('hidden');
+    $('saliwPlayerScreen').classList.remove('hidden');
   } else {
-    $('radioMoodScreen').classList.remove('hidden');
-    $('radioPlayerScreen').classList.add('hidden');
+    $('saliwMoodScreen').classList.remove('hidden');
+    $('saliwPlayerScreen').classList.add('hidden');
   }
-  $('radioPanel').classList.add('open');
-  $('musicBackdrop').classList.add('active');
-}
-function closeRadioPanel(){
-  $('radioPanel').classList.remove('open');
-  $('musicBackdrop').classList.remove('active');
+  $('saliwModal').classList.add('open');
+  $('saliwBackdrop').classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
-function selectRadioMood(mood){
+// Close / minimize modal
+function closeSaliw(){
+  $('saliwModal').classList.remove('open');
+  $('saliwBackdrop').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Select mood → go to player
+function selectSaliwMood(mood){
   musicCurrentMood = mood;
-  musicCurrentIndex = 0;
-  $('radioMoodScreen').classList.add('hidden');
-  $('radioPlayerScreen').classList.remove('hidden');
-  $('radioNowMood').textContent = MOOD_LABELS[mood];
-  loadAndPlayTrack();
+  musicCurrentIdx  = 0;
+  $('saliwNowMood').textContent = mood;
+  $('saliwMoodScreen').classList.add('hidden');
+  $('saliwPlayerScreen').classList.remove('hidden');
+  loadSaliwTrack();
 }
 
-function loadAndPlayTrack(){
+// Load and play current track
+function loadSaliwTrack(){
   if(!musicCurrentMood) return;
   const tracks = MUSIC_PLAYLIST[musicCurrentMood];
-  const idx = musicCurrentIndex % tracks.length;
-  const track = tracks[idx];
-  $('radioTrackTitle').textContent = track.title;
-  $('radioTrackOf').textContent = (idx+1)+' / '+tracks.length;
-  musicAudio.src = track.url;
+  const idx    = musicCurrentIdx % tracks.length;
+  const track  = tracks[idx];
+  $('saliwTrackTitle').textContent = track.title;
+  $('saliwTrackOf').textContent    = (idx+1) + ' / ' + tracks.length;
+  musicAudio.src    = track.url;
   musicAudio.volume = parseFloat($('musicVolume').value);
-  musicAudio.play().then(()=>{
-    musicPlaying = true;
-    updateRadioUI();
-  }).catch(()=>{
-    musicPlaying = false;
-    updateRadioUI();
-  });
-  musicAudio.onended = ()=>{ musicCurrentIndex++; loadAndPlayTrack(); };
+  musicAudio.play()
+    .then(()=>{ musicPlaying = true;  updateSaliwUI(); })
+    .catch(()=>{ musicPlaying = false; updateSaliwUI(); });
+  musicAudio.onended = ()=>{ musicCurrentIdx++; loadSaliwTrack(); };
 }
 
-function updateRadioUI(){
-  const playIcon = $('musicPlayIcon');
-  if(musicPlaying){
-    playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-  } else {
-    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-  }
-  const wv = $('radioWaveform');
-  if(musicPlaying) wv.classList.add('active');
-  else wv.classList.remove('active');
-  const idle = $('radioPillIdle');
-  const playing = $('radioPillPlaying');
+// Sync all UI to current state
+function updateSaliwUI(){
+  // Play/pause SVG
+  $('musicPlayIcon').innerHTML = musicPlaying
+    ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+
+  // Waveform
+  const wv = $('saliwWaveform');
+  musicPlaying ? wv.classList.add('active') : wv.classList.remove('active');
+
+  // Mini bar in live moods
+  const mini = $('saliwMini');
+  const lbl  = $('saliwMiniLabel');
   if(musicPlaying && musicCurrentMood){
-    idle.classList.add('hidden');
-    playing.classList.remove('hidden');
-    $('radioPillTrack').textContent = $('radioTrackTitle').textContent;
+    mini.classList.add('playing');
+    lbl.textContent = $('saliwTrackTitle').textContent;
   } else {
-    idle.classList.remove('hidden');
-    playing.classList.add('hidden');
+    mini.classList.remove('playing');
+    lbl.textContent = musicCurrentMood ? $('saliwTrackTitle').textContent : 'saliw';
   }
 }
 
-$('radioPill').addEventListener('click', (e)=>{
-  if(e.target.closest('#radioPillPause')) return;
-  openRadioPanel();
+// ── Event listeners ───────────────────────────
+
+// Mini bar → open modal
+$('saliwMini').addEventListener('click', openSaliw);
+
+// Minimize button
+$('saliwMinimize').addEventListener('click', closeSaliw);
+
+// Backdrop click
+$('saliwBackdrop').addEventListener('click', closeSaliw);
+
+// Mood buttons
+document.querySelectorAll('.saliw-mood-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> selectSaliwMood(btn.dataset.mood));
 });
 
-$('radioPillPause').addEventListener('click', (e)=>{
-  e.stopPropagation();
-  if(musicPlaying){ musicAudio.pause(); musicPlaying=false; }
-  else { musicAudio.play().catch(()=>{}); musicPlaying=true; }
-  updateRadioUI();
-});
-
-$('radioClose').addEventListener('click', closeRadioPanel);
-$('musicBackdrop').addEventListener('click', closeRadioPanel);
-
-document.querySelectorAll('.radio-mood-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=> selectRadioMood(btn.dataset.mood));
-});
-
+// Play / pause
 $('musicPlay').addEventListener('click', ()=>{
   if(!musicCurrentMood) return;
-  if(musicPlaying){ musicAudio.pause(); musicPlaying=false; }
-  else { musicAudio.play().catch(()=>{}); musicPlaying=true; }
-  updateRadioUI();
+  if(musicPlaying){ musicAudio.pause(); musicPlaying = false; }
+  else { musicAudio.play().catch(()=>{}); musicPlaying = true; }
+  updateSaliwUI();
 });
 
-$('musicNext').addEventListener('click', ()=>{ musicCurrentIndex++; loadAndPlayTrack(); });
-$('musicPrev').addEventListener('click', ()=>{ musicCurrentIndex=Math.max(0,musicCurrentIndex-1); loadAndPlayTrack(); });
+// Next / Prev
+$('musicNext').addEventListener('click', ()=>{ musicCurrentIdx++; loadSaliwTrack(); });
+$('musicPrev').addEventListener('click', ()=>{
+  musicCurrentIdx = Math.max(0, musicCurrentIdx - 1);
+  loadSaliwTrack();
+});
 
+// Volume
 $('musicVolume').addEventListener('input', ()=>{
   musicAudio.volume = parseFloat($('musicVolume').value);
+});
+
+// Change mood
+$('saliwChangeMood').addEventListener('click', ()=>{
+  musicAudio.pause();
+  musicPlaying = false;
+  updateSaliwUI();
+  $('saliwPlayerScreen').classList.add('hidden');
+  $('saliwMoodScreen').classList.remove('hidden');
 });
 
 // ── SUBSCRIPTION / VOUCHER SYSTEM ────────────
