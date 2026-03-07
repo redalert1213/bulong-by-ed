@@ -170,7 +170,12 @@
       <svg class="brand-svg" width="40" height="31" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
       <span class="brand-name">Bulong</span>
     </div>
-    <div class="nav-center"><span class="tagline">Say it safely</span></div>
+    <div class="nav-center">
+      <button class="music-nav-btn" id="musicNavBtn" title="Bulong Radio">
+        <span class="music-nav-icon" id="musicNavIcon">♪</span>
+        <span class="music-nav-label" id="musicNavLabel">Bulong Radio</span>
+      </button>
+    </div>
     <div class="nav-right">
       <div class="online-indicator">
         <span class="pulse-dot"></span>
@@ -338,7 +343,50 @@
     </div>
   </div>
 
-  <!-- NOTIFICATIONS PANEL -->
+  <!-- MUSIC PANEL -->
+  <div class="music-panel" id="musicPanel">
+    <div class="music-panel-inner">
+      <button class="music-close" id="musicClose">✕</button>
+
+      <!-- Mood selector -->
+      <div class="music-mood-screen" id="musicMoodScreen">
+        <p class="music-question">How are you feeling right now?</p>
+        <div class="music-moods">
+          <button class="music-mood-btn" data-mood="sad">😔<span>Sad</span></button>
+          <button class="music-mood-btn" data-mood="lonely">🌧<span>Lonely</span></button>
+          <button class="music-mood-btn" data-mood="calm">🌿<span>Calm</span></button>
+          <button class="music-mood-btn" data-mood="reflective">🕯<span>Reflective</span></button>
+          <button class="music-mood-btn" data-mood="hopeful">🌅<span>Hopeful</span></button>
+        </div>
+      </div>
+
+      <!-- Now playing screen -->
+      <div class="music-player-screen hidden" id="musicPlayerScreen">
+        <div class="music-mood-tag" id="musicMoodTag"></div>
+        <div class="music-track-info">
+          <div class="music-track-title" id="musicTrackTitle">—</div>
+          <div class="music-track-artist" id="musicTrackArtist">—</div>
+        </div>
+        <div class="music-visualizer" id="musicVisualizer">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="music-controls">
+          <button class="music-ctrl-btn" id="musicPrev">⏮</button>
+          <button class="music-ctrl-btn play" id="musicPlay">▶</button>
+          <button class="music-ctrl-btn" id="musicNext">⏭</button>
+        </div>
+        <div class="music-volume-row">
+          <span class="music-vol-icon">🔊</span>
+          <input type="range" class="music-volume" id="musicVolume" min="0" max="1" step="0.05" value="0.5"/>
+        </div>
+        <button class="music-change-mood" id="musicChangeMood">Change mood</button>
+      </div>
+    </div>
+  </div>
+  <div class="music-backdrop" id="musicBackdrop"></div>
+
+  <!-- MOBILE MUSIC BUTTON -->
+  <button class="music-mobile-btn" id="musicMobileBtn" title="Bulong Radio">♪</button>
   <div class="side-panel" id="notifPanel">
     <div class="side-panel-inner">
       <button class="side-close" id="notifClose">✕</button>
