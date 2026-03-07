@@ -1197,61 +1197,63 @@ function loadProfilePanel(){
 // ── BULONG RADIO ──────────────────────────────
 const MUSIC_PLAYLIST = {
   sad: [
-    { title: 'Sad Background',      url: 'https://cdn.pixabay.com/audio/2026/02/13/audio_05a315df51.mp3' },
-    { title: 'Sad Alone Drama',     url: 'https://cdn.pixabay.com/audio/2024/11/09/audio_4418d61de9.mp3' },
-    { title: 'Sad Piano',           url: 'https://cdn.pixabay.com/audio/2025/06/13/audio_10af6600b6.mp3' },
+    { title: 'Sad Background',  url: 'https://cdn.pixabay.com/audio/2026/02/13/audio_05a315df51.mp3' },
+    { title: 'Sad Alone Drama', url: 'https://cdn.pixabay.com/audio/2024/11/09/audio_4418d61de9.mp3' },
+    { title: 'Sad Piano',       url: 'https://cdn.pixabay.com/audio/2025/06/13/audio_10af6600b6.mp3' },
   ],
   lonely: [
-    { title: 'Lonely',              url: 'https://cdn.pixabay.com/audio/2025/03/01/audio_4d03f94c7f.mp3' },
-    { title: 'Lonely Planet',       url: 'https://cdn.pixabay.com/audio/2023/08/26/audio_438822ce87.mp3' },
-    { title: 'Calm Emotional',      url: 'https://cdn.pixabay.com/audio/2024/12/05/audio_0f46f73eb2.mp3' },
+    { title: 'Lonely',          url: 'https://cdn.pixabay.com/audio/2025/03/01/audio_4d03f94c7f.mp3' },
+    { title: 'Lonely Planet',   url: 'https://cdn.pixabay.com/audio/2023/08/26/audio_438822ce87.mp3' },
+    { title: 'Calm Emotional',  url: 'https://cdn.pixabay.com/audio/2024/12/05/audio_0f46f73eb2.mp3' },
   ],
   calm: [
-    { title: 'Calm Nature',         url: 'https://cdn.pixabay.com/audio/2026/01/22/audio_cc57639702.mp3' },
-    { title: 'Romantic Story',      url: 'https://cdn.pixabay.com/audio/2025/07/17/audio_30419312a4.mp3' },
-    { title: 'Calm Jazz',           url: 'https://cdn.pixabay.com/audio/2024/06/29/audio_26f6d5da4f.mp3' },
+    { title: 'Calm Nature',     url: 'https://cdn.pixabay.com/audio/2026/01/22/audio_cc57639702.mp3' },
+    { title: 'Romantic Story',  url: 'https://cdn.pixabay.com/audio/2025/07/17/audio_30419312a4.mp3' },
+    { title: 'Calm Jazz',       url: 'https://cdn.pixabay.com/audio/2024/06/29/audio_26f6d5da4f.mp3' },
   ],
   reflective: [
-    { title: 'Blizzard',            url: 'https://cdn.pixabay.com/audio/2024/11/16/audio_41533d2625.mp3' },
-    { title: 'Imperfect',           url: 'https://cdn.pixabay.com/audio/2024/08/11/audio_1320c278f7.mp3' },
-    { title: 'Teardrop',            url: 'https://cdn.pixabay.com/audio/2024/09/02/audio_c49abe4ef2.mp3' },
+    { title: 'Blizzard',        url: 'https://cdn.pixabay.com/audio/2024/11/16/audio_41533d2625.mp3' },
+    { title: 'Imperfect',       url: 'https://cdn.pixabay.com/audio/2024/08/11/audio_1320c278f7.mp3' },
+    { title: 'Teardrop',        url: 'https://cdn.pixabay.com/audio/2024/09/02/audio_c49abe4ef2.mp3' },
   ],
   hopeful: [
-    { title: 'Beautiful Plays',     url: 'https://cdn.pixabay.com/audio/2025/11/15/audio_cdcbb9b250.mp3' },
-    { title: 'Hopeful Music',       url: 'https://cdn.pixabay.com/audio/2026/02/27/audio_da57658d9d.mp3' },
-    { title: 'Hopeful Piano',       url: 'https://cdn.pixabay.com/audio/2025/04/10/audio_b8fade88b6.mp3' },
+    { title: 'Beautiful Plays', url: 'https://cdn.pixabay.com/audio/2025/11/15/audio_cdcbb9b250.mp3' },
+    { title: 'Hopeful Music',   url: 'https://cdn.pixabay.com/audio/2026/02/27/audio_da57658d9d.mp3' },
+    { title: 'Hopeful Piano',   url: 'https://cdn.pixabay.com/audio/2025/04/10/audio_b8fade88b6.mp3' },
   ],
 };
 
 const MOOD_LABELS = {
-  sad:       '😔 sad',
-  lonely:    '🌧 lonely',
-  calm:      '🌿 calm',
-  reflective:'🕯 reflective',
-  hopeful:   '🌅 hopeful'
+  sad:'sad', lonely:'lonely', calm:'calm', reflective:'reflective', hopeful:'hopeful'
 };
 
 let musicAudio = new Audio();
-musicAudio.crossOrigin = 'anonymous';
 let musicCurrentMood = null;
 let musicCurrentIndex = 0;
 let musicPlaying = false;
 
-function openMusicPanel(){
-  $('musicPanel').classList.add('open');
+function openRadioPanel(){
+  if(musicCurrentMood){
+    $('radioMoodScreen').classList.add('hidden');
+    $('radioPlayerScreen').classList.remove('hidden');
+  } else {
+    $('radioMoodScreen').classList.remove('hidden');
+    $('radioPlayerScreen').classList.add('hidden');
+  }
+  $('radioPanel').classList.add('open');
   $('musicBackdrop').classList.add('active');
 }
-function closeMusicPanel(){
-  $('musicPanel').classList.remove('open');
+function closeRadioPanel(){
+  $('radioPanel').classList.remove('open');
   $('musicBackdrop').classList.remove('active');
 }
 
-function selectMusicMood(mood){
+function selectRadioMood(mood){
   musicCurrentMood = mood;
   musicCurrentIndex = 0;
-  $('musicMoodScreen').classList.add('hidden');
-  $('musicPlayerScreen').classList.remove('hidden');
-  $('musicMoodTag').textContent = MOOD_LABELS[mood];
+  $('radioMoodScreen').classList.add('hidden');
+  $('radioPlayerScreen').classList.remove('hidden');
+  $('radioNowMood').textContent = MOOD_LABELS[mood];
   loadAndPlayTrack();
 }
 
@@ -1260,77 +1262,73 @@ function loadAndPlayTrack(){
   const tracks = MUSIC_PLAYLIST[musicCurrentMood];
   const idx = musicCurrentIndex % tracks.length;
   const track = tracks[idx];
-  $('musicTrackTitle').textContent = track.title;
-  $('musicTrackNum').textContent = 'track '+(idx+1)+' of '+tracks.length;
+  $('radioTrackTitle').textContent = track.title;
+  $('radioTrackOf').textContent = (idx+1)+' / '+tracks.length;
   musicAudio.src = track.url;
   musicAudio.volume = parseFloat($('musicVolume').value);
   musicAudio.play().then(()=>{
     musicPlaying = true;
-    updateMusicUI();
+    updateRadioUI();
   }).catch(()=>{
     musicPlaying = false;
-    updateMusicUI();
+    updateRadioUI();
   });
   musicAudio.onended = ()=>{ musicCurrentIndex++; loadAndPlayTrack(); };
 }
 
-function updateMusicUI(){
+function updateRadioUI(){
   const playIcon = $('musicPlayIcon');
   if(musicPlaying){
     playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
   } else {
     playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
   }
-  const vinyl = $('musicVinyl');
-  if(musicPlaying) vinyl.classList.add('spinning');
-  else vinyl.classList.remove('spinning');
-  const navBtn = $('musicNavBtn');
-  const mobileBtn = $('musicMobileBtn');
-  if(musicPlaying){
-    navBtn.classList.add('playing');
-    mobileBtn.classList.add('playing');
-    $('musicNavLabel').textContent = $('musicTrackTitle').textContent;
+  const wv = $('radioWaveform');
+  if(musicPlaying) wv.classList.add('active');
+  else wv.classList.remove('active');
+  const idle = $('radioPillIdle');
+  const playing = $('radioPillPlaying');
+  if(musicPlaying && musicCurrentMood){
+    idle.classList.add('hidden');
+    playing.classList.remove('hidden');
+    $('radioPillTrack').textContent = $('radioTrackTitle').textContent;
   } else {
-    navBtn.classList.remove('playing');
-    mobileBtn.classList.remove('playing');
-    $('musicNavLabel').textContent = 'listen';
+    idle.classList.remove('hidden');
+    playing.classList.add('hidden');
   }
 }
 
-$('musicNavBtn').addEventListener('click', openMusicPanel);
-$('musicMobileBtn').addEventListener('click', openMusicPanel);
-$('musicClose').addEventListener('click', closeMusicPanel);
-$('musicBackdrop').addEventListener('click', closeMusicPanel);
+$('radioPill').addEventListener('click', (e)=>{
+  if(e.target.closest('#radioPillPause')) return;
+  openRadioPanel();
+});
 
-document.querySelectorAll('.music-mood-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=> selectMusicMood(btn.dataset.mood));
+$('radioPillPause').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  if(musicPlaying){ musicAudio.pause(); musicPlaying=false; }
+  else { musicAudio.play().catch(()=>{}); musicPlaying=true; }
+  updateRadioUI();
+});
+
+$('radioClose').addEventListener('click', closeRadioPanel);
+$('musicBackdrop').addEventListener('click', closeRadioPanel);
+
+document.querySelectorAll('.radio-mood-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> selectRadioMood(btn.dataset.mood));
 });
 
 $('musicPlay').addEventListener('click', ()=>{
   if(!musicCurrentMood) return;
-  if(musicPlaying){
-    musicAudio.pause();
-    musicPlaying = false;
-  } else {
-    musicAudio.play().catch(()=>{});
-    musicPlaying = true;
-  }
-  updateMusicUI();
+  if(musicPlaying){ musicAudio.pause(); musicPlaying=false; }
+  else { musicAudio.play().catch(()=>{}); musicPlaying=true; }
+  updateRadioUI();
 });
 
 $('musicNext').addEventListener('click', ()=>{ musicCurrentIndex++; loadAndPlayTrack(); });
-$('musicPrev').addEventListener('click', ()=>{ musicCurrentIndex = Math.max(0, musicCurrentIndex-1); loadAndPlayTrack(); });
+$('musicPrev').addEventListener('click', ()=>{ musicCurrentIndex=Math.max(0,musicCurrentIndex-1); loadAndPlayTrack(); });
 
 $('musicVolume').addEventListener('input', ()=>{
   musicAudio.volume = parseFloat($('musicVolume').value);
-});
-
-$('musicChangeMood').addEventListener('click', ()=>{
-  musicAudio.pause();
-  musicPlaying = false;
-  updateMusicUI();
-  $('musicPlayerScreen').classList.add('hidden');
-  $('musicMoodScreen').classList.remove('hidden');
 });
 
 // ── SUBSCRIPTION / VOUCHER SYSTEM ────────────
