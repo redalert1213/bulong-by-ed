@@ -1197,35 +1197,42 @@ function loadProfilePanel(){
 // ── BULONG RADIO ──────────────────────────────
 const MUSIC_PLAYLIST = {
   sad: [
-    { title: 'Sad Piano No. 1',      artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a73467.mp3' },
-    { title: 'Emotional Piano',      artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/25/audio_946b696fa4.mp3' },
-    { title: 'Melancholy',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/11/22/audio_febc508520.mp3' },
+    { title: 'Sad Background',      url: 'https://cdn.pixabay.com/audio/2026/02/13/audio_05a315df51.mp3' },
+    { title: 'Sad Alone Drama',     url: 'https://cdn.pixabay.com/audio/2024/11/09/audio_4418d61de9.mp3' },
+    { title: 'Sad Piano',           url: 'https://cdn.pixabay.com/audio/2025/06/13/audio_10af6600b6.mp3' },
   ],
   lonely: [
-    { title: 'Rainy Day',            artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3' },
-    { title: 'Alone',                artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/16/audio_5e80f12e3b.mp3' },
-    { title: 'Empty Room',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2023/01/09/audio_8b2558d0c2.mp3' },
+    { title: 'Lonely',              url: 'https://cdn.pixabay.com/audio/2025/03/01/audio_4d03f94c7f.mp3' },
+    { title: 'Lonely Planet',       url: 'https://cdn.pixabay.com/audio/2023/08/26/audio_438822ce87.mp3' },
+    { title: 'Calm Emotional',      url: 'https://cdn.pixabay.com/audio/2024/12/05/audio_0f46f73eb2.mp3' },
   ],
   calm: [
-    { title: 'Lofi Chill',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/05/17/audio_69a61cd6d6.mp3' },
-    { title: 'Good Night',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/03/15/audio_8cb749d973.mp3' },
-    { title: 'Quiet Afternoon',      artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde668d05.mp3' },
+    { title: 'Calm Nature',         url: 'https://cdn.pixabay.com/audio/2026/01/22/audio_cc57639702.mp3' },
+    { title: 'Romantic Story',      url: 'https://cdn.pixabay.com/audio/2025/07/17/audio_30419312a4.mp3' },
+    { title: 'Calm Jazz',           url: 'https://cdn.pixabay.com/audio/2024/06/29/audio_26f6d5da4f.mp3' },
   ],
   reflective: [
-    { title: 'Deep Thoughts',        artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/30/audio_a3e2c7e672.mp3' },
-    { title: 'Contemplation',        artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2023/02/28/audio_fca39a60fc.mp3' },
-    { title: 'Midnight Piano',       artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/11/09/audio_d7c6a23f55.mp3' },
+    { title: 'Blizzard',            url: 'https://cdn.pixabay.com/audio/2024/11/16/audio_41533d2625.mp3' },
+    { title: 'Imperfect',           url: 'https://cdn.pixabay.com/audio/2024/08/11/audio_1320c278f7.mp3' },
+    { title: 'Teardrop',            url: 'https://cdn.pixabay.com/audio/2024/09/02/audio_c49abe4ef2.mp3' },
   ],
   hopeful: [
-    { title: 'New Beginning',        artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/10/audio_794d7d4bef.mp3' },
-    { title: 'Small Emotions',       artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/12/20/audio_e6c9b9a9c3.mp3' },
-    { title: 'Gentle Morning',       artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2023/03/10/audio_7f91a7f3b2.mp3' },
+    { title: 'Beautiful Plays',     url: 'https://cdn.pixabay.com/audio/2025/11/15/audio_cdcbb9b250.mp3' },
+    { title: 'Hopeful Music',       url: 'https://cdn.pixabay.com/audio/2026/02/27/audio_da57658d9d.mp3' },
+    { title: 'Hopeful Piano',       url: 'https://cdn.pixabay.com/audio/2025/04/10/audio_b8fade88b6.mp3' },
   ],
 };
 
-const MOOD_LABELS = { sad:'😔 Sad', lonely:'🌧 Lonely', calm:'🌿 Calm', reflective:'🕯 Reflective', hopeful:'🌅 Hopeful' };
+const MOOD_LABELS = {
+  sad:       '😔 sad',
+  lonely:    '🌧 lonely',
+  calm:      '🌿 calm',
+  reflective:'🕯 reflective',
+  hopeful:   '🌅 hopeful'
+};
 
 let musicAudio = new Audio();
+musicAudio.crossOrigin = 'anonymous';
 let musicCurrentMood = null;
 let musicCurrentIndex = 0;
 let musicPlaying = false;
@@ -1251,30 +1258,32 @@ function selectMusicMood(mood){
 function loadAndPlayTrack(){
   if(!musicCurrentMood) return;
   const tracks = MUSIC_PLAYLIST[musicCurrentMood];
-  const track = tracks[musicCurrentIndex % tracks.length];
+  const idx = musicCurrentIndex % tracks.length;
+  const track = tracks[idx];
   $('musicTrackTitle').textContent = track.title;
-  $('musicTrackArtist').textContent = 'Bulong Radio · ' + MOOD_LABELS[musicCurrentMood];
+  $('musicTrackNum').textContent = 'track '+(idx+1)+' of '+tracks.length;
   musicAudio.src = track.url;
   musicAudio.volume = parseFloat($('musicVolume').value);
   musicAudio.play().then(()=>{
     musicPlaying = true;
     updateMusicUI();
   }).catch(()=>{
-    // Autoplay blocked — show play button
     musicPlaying = false;
     updateMusicUI();
   });
-  musicAudio.onended = ()=>{ musicNext(); };
+  musicAudio.onended = ()=>{ musicCurrentIndex++; loadAndPlayTrack(); };
 }
 
 function updateMusicUI(){
-  $('musicPlay').textContent = musicPlaying ? '⏸' : '▶';
-  $('musicNavIcon').textContent = musicPlaying ? '♫' : '♪';
-  $('musicMobileBtn').textContent = musicPlaying ? '♫' : '♪';
-  const vis = $('musicVisualizer');
-  if(musicPlaying) vis.classList.add('active');
-  else vis.classList.remove('active');
-  // Nav button playing state
+  const playIcon = $('musicPlayIcon');
+  if(musicPlaying){
+    playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  } else {
+    playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  }
+  const vinyl = $('musicVinyl');
+  if(musicPlaying) vinyl.classList.add('spinning');
+  else vinyl.classList.remove('spinning');
   const navBtn = $('musicNavBtn');
   const mobileBtn = $('musicMobileBtn');
   if(musicPlaying){
@@ -1284,20 +1293,10 @@ function updateMusicUI(){
   } else {
     navBtn.classList.remove('playing');
     mobileBtn.classList.remove('playing');
-    $('musicNavLabel').textContent = 'Bulong Radio';
+    $('musicNavLabel').textContent = 'listen';
   }
 }
 
-function musicNext(){
-  musicCurrentIndex++;
-  loadAndPlayTrack();
-}
-function musicPrev(){
-  musicCurrentIndex = Math.max(0, musicCurrentIndex - 1);
-  loadAndPlayTrack();
-}
-
-// Event listeners
 $('musicNavBtn').addEventListener('click', openMusicPanel);
 $('musicMobileBtn').addEventListener('click', openMusicPanel);
 $('musicClose').addEventListener('click', closeMusicPanel);
@@ -1308,18 +1307,19 @@ document.querySelectorAll('.music-mood-btn').forEach(btn=>{
 });
 
 $('musicPlay').addEventListener('click', ()=>{
+  if(!musicCurrentMood) return;
   if(musicPlaying){
     musicAudio.pause();
     musicPlaying = false;
   } else {
-    musicAudio.play();
+    musicAudio.play().catch(()=>{});
     musicPlaying = true;
   }
   updateMusicUI();
 });
 
-$('musicNext').addEventListener('click', musicNext);
-$('musicPrev').addEventListener('click', musicPrev);
+$('musicNext').addEventListener('click', ()=>{ musicCurrentIndex++; loadAndPlayTrack(); });
+$('musicPrev').addEventListener('click', ()=>{ musicCurrentIndex = Math.max(0, musicCurrentIndex-1); loadAndPlayTrack(); });
 
 $('musicVolume').addEventListener('input', ()=>{
   musicAudio.volume = parseFloat($('musicVolume').value);
