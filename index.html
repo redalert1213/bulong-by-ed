@@ -170,14 +170,7 @@
       <svg class="brand-svg" width="40" height="31" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
       <span class="brand-name">Bulong</span>
     </div>
-    <div class="nav-center">
-      <button class="music-nav-btn" id="musicNavBtn" title="Listen">
-        <span class="music-nav-bars" id="musicNavBars">
-          <span></span><span></span><span></span><span></span>
-        </span>
-        <span class="music-nav-label" id="musicNavLabel">listen</span>
-      </button>
-    </div>
+    <div class="nav-center"></div>
     <div class="nav-right">
       <div class="online-indicator">
         <span class="pulse-dot"></span>
@@ -345,90 +338,92 @@
     </div>
   </div>
 
-  <!-- MUSIC PANEL -->
-  <div class="music-panel" id="musicPanel">
-    <div class="music-panel-inner">
-      <button class="music-close" id="musicClose">✕</button>
+  <!-- BULONG RADIO — floating pill + panel -->
+  <div class="radio-pill" id="radioPill">
+    <div class="radio-pill-idle" id="radioPillIdle">
+      <span class="radio-pill-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+      </span>
+      <span class="radio-pill-text">radio</span>
+    </div>
+    <div class="radio-pill-playing hidden" id="radioPillPlaying">
+      <span class="radio-pill-bars playing">
+        <span></span><span></span><span></span><span></span><span></span>
+      </span>
+      <span class="radio-pill-track" id="radioPillTrack">—</span>
+      <button class="radio-pill-pause" id="radioPillPause">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+      </button>
+    </div>
+  </div>
 
-      <!-- Mood selector screen -->
-      <div class="music-mood-screen" id="musicMoodScreen">
-        <div class="music-header">
-          <div class="music-header-bars">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-          <p class="music-question">what are you carrying<br>right now?</p>
-        </div>
-        <div class="music-moods">
-          <button class="music-mood-btn" data-mood="sad">
-            <span class="mood-emoji">😔</span>
-            <span class="mood-name">Sad</span>
-            <span class="mood-sub">let it out</span>
+  <!-- RADIO PANEL -->
+  <div class="radio-panel" id="radioPanel">
+    <div class="radio-panel-inner">
+      <button class="radio-close" id="radioClose">✕</button>
+
+      <!-- Mood screen -->
+      <div class="radio-mood-screen" id="radioMoodScreen">
+        <p class="radio-q">what do you need<br>right now?</p>
+        <div class="radio-moods">
+          <button class="radio-mood-btn" data-mood="sad">
+            <span class="rmood-dot" style="background:#7B8DB0"></span>
+            <span class="rmood-name">sad</span>
+            <span class="rmood-hint">let it flow</span>
           </button>
-          <button class="music-mood-btn" data-mood="lonely">
-            <span class="mood-emoji">🌧</span>
-            <span class="mood-name">Lonely</span>
-            <span class="mood-sub">you're not alone</span>
+          <button class="radio-mood-btn" data-mood="lonely">
+            <span class="rmood-dot" style="background:#9FB4C7"></span>
+            <span class="rmood-name">lonely</span>
+            <span class="rmood-hint">you are heard</span>
           </button>
-          <button class="music-mood-btn" data-mood="calm">
-            <span class="mood-emoji">🌿</span>
-            <span class="mood-name">Calm</span>
-            <span class="mood-sub">breathe slowly</span>
+          <button class="radio-mood-btn" data-mood="calm">
+            <span class="rmood-dot" style="background:#84A98C"></span>
+            <span class="rmood-name">calm</span>
+            <span class="rmood-hint">breathe with it</span>
           </button>
-          <button class="music-mood-btn" data-mood="reflective">
-            <span class="mood-emoji">🕯</span>
-            <span class="mood-name">Reflective</span>
-            <span class="mood-sub">sit with it</span>
+          <button class="radio-mood-btn" data-mood="reflective">
+            <span class="rmood-dot" style="background:#B8A0B3"></span>
+            <span class="rmood-name">reflective</span>
+            <span class="rmood-hint">sit quietly</span>
           </button>
-          <button class="music-mood-btn" data-mood="hopeful">
-            <span class="mood-emoji">🌅</span>
-            <span class="mood-name">Hopeful</span>
-            <span class="mood-sub">keep going</span>
+          <button class="radio-mood-btn" data-mood="hopeful">
+            <span class="rmood-dot" style="background:#C4A882"></span>
+            <span class="rmood-name">hopeful</span>
+            <span class="rmood-hint">keep going</span>
           </button>
         </div>
       </div>
 
       <!-- Player screen -->
-      <div class="music-player-screen hidden" id="musicPlayerScreen">
-        <div class="music-mood-pill" id="musicMoodTag"></div>
-        <div class="music-vinyl" id="musicVinyl">
-          <div class="vinyl-inner">
-            <div class="vinyl-bars" id="vinylBars">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-          </div>
+      <div class="radio-player-screen hidden" id="radioPlayerScreen">
+        <div class="radio-now-mood" id="radioNowMood"></div>
+        <div class="radio-waveform" id="radioWaveform">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
         </div>
-        <div class="music-track-info">
-          <div class="music-track-title" id="musicTrackTitle">—</div>
-          <div class="music-track-num" id="musicTrackNum">track 1 of 3</div>
-        </div>
-        <div class="music-controls">
-          <button class="music-ctrl-btn prev" id="musicPrev" title="Previous">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+        <div class="radio-track-title" id="radioTrackTitle">—</div>
+        <div class="radio-track-of" id="radioTrackOf">1 / 3</div>
+        <div class="radio-controls">
+          <button class="radio-ctrl prev" id="musicPrev">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
           </button>
-          <button class="music-ctrl-btn play" id="musicPlay" title="Play/Pause">
-            <svg id="musicPlayIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <button class="radio-ctrl playbtn" id="musicPlay">
+            <svg id="musicPlayIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
           </button>
-          <button class="music-ctrl-btn next" id="musicNext" title="Next">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2-8.14 5.51 2.14L8 14.14V9.86zM16 6h2v12h-2z"/></svg>
+          <button class="radio-ctrl next" id="musicNext">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2-8.14 5.51 2.14L8 14.14V9.86zM16 6h2v12h-2z"/></svg>
           </button>
         </div>
-        <div class="music-volume-row">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+        <div class="radio-vol-row">
+          <span class="radio-vol-icon">–</span>
           <input type="range" class="music-volume" id="musicVolume" min="0" max="1" step="0.05" value="0.5"/>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          <span class="radio-vol-icon">+</span>
         </div>
-        <button class="music-change-mood" id="musicChangeMood">← change mood</button>
       </div>
     </div>
   </div>
   <div class="music-backdrop" id="musicBackdrop"></div>
-
-  <!-- MOBILE MUSIC BUTTON -->
-  <button class="music-mobile-btn" id="musicMobileBtn" title="Listen">
-    <span class="mobile-music-bars" id="mobileMusicBars">
-      <span></span><span></span><span></span><span></span>
-    </span>
-  </button>
   <div class="side-panel" id="notifPanel">
     <div class="side-panel-inner">
       <button class="side-close" id="notifClose">✕</button>
