@@ -1615,9 +1615,9 @@ If someone mentions self-harm, suicide, or is in danger:
 - Stay present — don't abruptly change topic or dismiss.`;
 
 // ── KINIG API KEY ─────────────────────────────
-// Replace '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' with your actual Groq API key
-// Get one FREE at: https://console.groq.com → API Keys
-const KINIG_API_KEY = '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';
+// Replace 'YOUR_GROQ_API_KEY_HERE' with your actual Groq API key
+// Kinig now uses backend — API key is hidden server-side
+const KINIG_BACKEND_URL = 'https://bulong-backend-production.up.railway.app/api/kinig';
 
 async function sendKinig(){
   const text=$('kinigInput').value.trim();
@@ -1630,15 +1630,12 @@ async function sendKinig(){
   kinigHistory.push({role:'user',content:text});
   const te=appendTyping();
   try{
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    const res=await fetch(KINIG_BACKEND_URL,{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'Authorization':'Bearer '+KINIG_API_KEY
       },
       body:JSON.stringify({
-        model:'llama-3.3-70b-versatile',
-        max_tokens:1000,
         messages:[
           {role:'system', content:KINIG_SYS},
           ...kinigHistory
@@ -1665,7 +1662,7 @@ async function sendKinig(){
   }catch(err){
     console.error('Kinig fetch error:', err);
     te.remove();
-    appendKMsg('Hindi ako makakonekta ngayon. Check your internet or API key. 🌿','bot');
+    appendKMsg('Hindi ako makakonekta ngayon. Check your internet. 🌿','bot');
   }
 }
 
