@@ -1194,6 +1194,145 @@ function loadProfilePanel(){
   loadSubscriptionUI();
 }
 
+// ── BULONG RADIO ──────────────────────────────
+const MUSIC_PLAYLIST = {
+  sad: [
+    { title: 'Sad Piano No. 1',      artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a73467.mp3' },
+    { title: 'Emotional Piano',      artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/25/audio_946b696fa4.mp3' },
+    { title: 'Melancholy',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/11/22/audio_febc508520.mp3' },
+  ],
+  lonely: [
+    { title: 'Rainy Day',            artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3' },
+    { title: 'Alone',                artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/16/audio_5e80f12e3b.mp3' },
+    { title: 'Empty Room',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2023/01/09/audio_8b2558d0c2.mp3' },
+  ],
+  calm: [
+    { title: 'Lofi Chill',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/05/17/audio_69a61cd6d6.mp3' },
+    { title: 'Good Night',           artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/03/15/audio_8cb749d973.mp3' },
+    { title: 'Quiet Afternoon',      artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/08/04/audio_2dde668d05.mp3' },
+  ],
+  reflective: [
+    { title: 'Deep Thoughts',        artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/30/audio_a3e2c7e672.mp3' },
+    { title: 'Contemplation',        artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2023/02/28/audio_fca39a60fc.mp3' },
+    { title: 'Midnight Piano',       artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/11/09/audio_d7c6a23f55.mp3' },
+  ],
+  hopeful: [
+    { title: 'New Beginning',        artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/10/10/audio_794d7d4bef.mp3' },
+    { title: 'Small Emotions',       artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2022/12/20/audio_e6c9b9a9c3.mp3' },
+    { title: 'Gentle Morning',       artist: 'Pixabay',  url: 'https://cdn.pixabay.com/audio/2023/03/10/audio_7f91a7f3b2.mp3' },
+  ],
+};
+
+const MOOD_LABELS = { sad:'😔 Sad', lonely:'🌧 Lonely', calm:'🌿 Calm', reflective:'🕯 Reflective', hopeful:'🌅 Hopeful' };
+
+let musicAudio = new Audio();
+let musicCurrentMood = null;
+let musicCurrentIndex = 0;
+let musicPlaying = false;
+
+function openMusicPanel(){
+  $('musicPanel').classList.add('open');
+  $('musicBackdrop').classList.add('active');
+}
+function closeMusicPanel(){
+  $('musicPanel').classList.remove('open');
+  $('musicBackdrop').classList.remove('active');
+}
+
+function selectMusicMood(mood){
+  musicCurrentMood = mood;
+  musicCurrentIndex = 0;
+  $('musicMoodScreen').classList.add('hidden');
+  $('musicPlayerScreen').classList.remove('hidden');
+  $('musicMoodTag').textContent = MOOD_LABELS[mood];
+  loadAndPlayTrack();
+}
+
+function loadAndPlayTrack(){
+  if(!musicCurrentMood) return;
+  const tracks = MUSIC_PLAYLIST[musicCurrentMood];
+  const track = tracks[musicCurrentIndex % tracks.length];
+  $('musicTrackTitle').textContent = track.title;
+  $('musicTrackArtist').textContent = 'Bulong Radio · ' + MOOD_LABELS[musicCurrentMood];
+  musicAudio.src = track.url;
+  musicAudio.volume = parseFloat($('musicVolume').value);
+  musicAudio.play().then(()=>{
+    musicPlaying = true;
+    updateMusicUI();
+  }).catch(()=>{
+    // Autoplay blocked — show play button
+    musicPlaying = false;
+    updateMusicUI();
+  });
+  musicAudio.onended = ()=>{ musicNext(); };
+}
+
+function updateMusicUI(){
+  $('musicPlay').textContent = musicPlaying ? '⏸' : '▶';
+  $('musicNavIcon').textContent = musicPlaying ? '♫' : '♪';
+  $('musicMobileBtn').textContent = musicPlaying ? '♫' : '♪';
+  const vis = $('musicVisualizer');
+  if(musicPlaying) vis.classList.add('active');
+  else vis.classList.remove('active');
+  // Nav button playing state
+  const navBtn = $('musicNavBtn');
+  const mobileBtn = $('musicMobileBtn');
+  if(musicPlaying){
+    navBtn.classList.add('playing');
+    mobileBtn.classList.add('playing');
+    $('musicNavLabel').textContent = $('musicTrackTitle').textContent;
+  } else {
+    navBtn.classList.remove('playing');
+    mobileBtn.classList.remove('playing');
+    $('musicNavLabel').textContent = 'Bulong Radio';
+  }
+}
+
+function musicNext(){
+  musicCurrentIndex++;
+  loadAndPlayTrack();
+}
+function musicPrev(){
+  musicCurrentIndex = Math.max(0, musicCurrentIndex - 1);
+  loadAndPlayTrack();
+}
+
+// Event listeners
+$('musicNavBtn').addEventListener('click', openMusicPanel);
+$('musicMobileBtn').addEventListener('click', openMusicPanel);
+$('musicClose').addEventListener('click', closeMusicPanel);
+$('musicBackdrop').addEventListener('click', closeMusicPanel);
+
+document.querySelectorAll('.music-mood-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> selectMusicMood(btn.dataset.mood));
+});
+
+$('musicPlay').addEventListener('click', ()=>{
+  if(musicPlaying){
+    musicAudio.pause();
+    musicPlaying = false;
+  } else {
+    musicAudio.play();
+    musicPlaying = true;
+  }
+  updateMusicUI();
+});
+
+$('musicNext').addEventListener('click', musicNext);
+$('musicPrev').addEventListener('click', musicPrev);
+
+$('musicVolume').addEventListener('input', ()=>{
+  musicAudio.volume = parseFloat($('musicVolume').value);
+});
+
+$('musicChangeMood').addEventListener('click', ()=>{
+  musicAudio.pause();
+  musicPlaying = false;
+  updateMusicUI();
+  $('musicPlayerScreen').classList.add('hidden');
+  $('musicMoodScreen').classList.remove('hidden');
+});
+
 // ── SUBSCRIPTION / VOUCHER SYSTEM ────────────
 const VALID_VOUCHERS = {
   'BULONG-XL-2026-ED01': { days: 30, label: 'Early Access Gift' },
