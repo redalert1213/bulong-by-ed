@@ -648,15 +648,17 @@ document.querySelectorAll('.mf-btn').forEach(btn=>btn.addEventListener('click',(
 
 // ── WHISPER OF THE DAY ────────────────────────
 function pickWOTD(){
-  const list=Object.values(confessions);
+  // Exclude permanent/fake whispers — real user whispers only
+  const list=Object.entries(confessions)
+    .filter(([,c])=>!c.permanent && c.content && totalReacts(c)>0)
+    .sort(([,a],[,b])=>totalReacts(b)-totalReacts(a));
   if(!list.length){$('wotdBanner').classList.add('hidden');return;}
-  const best=list.slice().sort((a,b)=>totalReacts(b)-totalReacts(a))[0];
+  const [key,best]=list[0];
   $('wotdText').textContent=best.content||'📷 Photo whisper';
   $('wotdAuthor').textContent='— '+best.author;
   $('wotdDot').style.background=best.moodColor;
   $('wotdDot').style.boxShadow=`0 0 8px ${best.moodColor}`;
   $('wotdBanner').classList.remove('hidden');
-  const key=Object.entries(confessions).find(([k,v])=>v===best)?.[0];
   $('wotdView').onclick=()=>{if(key)tryOpenPopup(key);};
 }
 $('wotdClose').addEventListener('click',()=>$('wotdBanner').classList.add('hidden'));
@@ -1401,7 +1403,25 @@ function updateEmptyState(){
 
 // ── FEATURED WHISPER ──────────────────────────
 let featuredDismissed = false;
-function loadFeaturedWhisper(){}  // kept for compatibility, listener below handles it
+function loadFeaturedWhisper(){
+  db.ref('featured').on('value', snap=>{
+    if(featuredDismissed) return;
+    const f=snap.val();
+    const banner=$('featuredBanner');
+    const textEl=$('featuredText');
+    const authorEl=$('featuredAuthor');
+    if(!banner||!textEl) return;
+    if(!f||!f.active||!f.text){
+      banner.classList.add('hidden');
+      adjustWotdPosition(false);
+      return;
+    }
+    textEl.textContent=f.text;
+    if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
+    banner.classList.remove('hidden');
+    setTimeout(()=>adjustWotdPosition(true), 50);
+  });
+}
 
 function adjustWotdPosition(featuredVisible){
   const wotd = $('wotdBanner');
@@ -1415,23 +1435,6 @@ function adjustWotdPosition(featuredVisible){
   }
 }
 
-db.ref('featured').on('value', snap=>{
-  if(featuredDismissed) return;
-  const f=snap.val();
-  const banner=$('featuredBanner');
-  const textEl=$('featuredText');
-  const authorEl=$('featuredAuthor');
-  if(!banner||!textEl) return;
-  if(!f||!f.active||!f.text){
-    banner.classList.add('hidden');
-    adjustWotdPosition(false);
-    return;
-  }
-  textEl.textContent=f.text;
-  if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
-  banner.classList.remove('hidden');
-  setTimeout(()=>adjustWotdPosition(true), 50);
-});
 const featuredCloseBtn=$('featuredClose');
 if(featuredCloseBtn){
   featuredCloseBtn.addEventListener('click',()=>{
@@ -2091,6 +2094,17 @@ function launchApp(user,profile){
   if(window._dismissLoader) window._dismissLoader();
   setTimeout(()=>{ showToast('Welcome to Bulong. You are safe here. 🌿'); Sound.welcome(); }, 800);
   setTimeout(checkOnboarding, 2000);
+  // Start featured whisper listener
+  loadFeaturedWhisper();
+  // Featured close button
+  const _fClose=$('featuredClose');
+  if(_fClose){
+    _fClose.onclick=()=>{
+      featuredDismissed=true;
+      $('featuredBanner').classList.add('hidden');
+      adjustWotdPosition(false);
+    };
+  }
   // Keep subscription data in sync
   db.ref('users/'+user.uid+'/subscription').on('value', snap=>{
     if(!userProfile) return;
