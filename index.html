@@ -166,15 +166,16 @@
 
   <!-- NAV -->
   <nav class="navbar">
-    <!-- Left: online indicator -->
     <div class="nav-brand">
+      <svg class="brand-svg" width="40" height="31" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
+      <span class="brand-name">Bulong</span>
+    </div>
+    <div class="nav-center"></div>
+    <div class="nav-right">
       <div class="online-indicator">
         <span class="pulse-dot"></span>
         <span id="onlineCount">1</span><span class="online-label"> here with you</span>
       </div>
-    </div>
-    <!-- Right: actions -->
-    <div class="nav-right">
       <button class="profile-pill" id="profileBtn">
         <span class="profile-dot" id="profileDot"></span>
         <span class="profile-name" id="profileNameNav">...</span>
@@ -186,13 +187,14 @@
         </svg>
         <span class="notif-badge hidden" id="notifBadge">0</span>
       </button>
-      <button class="btn-confess" id="openConfessBtn">+ Bulong</button>
+
+      <button class="btn-confess" id="openConfessBtn">+ Whisper</button>
       <button class="night-toggle" id="nightToggle" title="Toggle light mode"><span class="night-icon">☀️</span></button>
     </div>
   </nav>
 
   <!-- MOOD FILTER BAR -->
-  <div class="mood-filter-bar" id="moodFilterBar">
+  <div class="mood-filter-bar">
     <button class="mf-btn active" data-mood="all">All</button>
     <button class="mf-btn" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
     <button class="mf-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
