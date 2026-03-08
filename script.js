@@ -68,6 +68,7 @@ let userLng          = null;
 let kinigOpen        = false;
 let kinigHistory     = [];
 let activeId         = null;
+let userSaved        = {}; // { whisperKey: true }
 let pendingCWId      = null;
 let setupColorChoice = '#84A98C';
 let profileColorChoice = '#84A98C';
@@ -707,6 +708,21 @@ function openPopup(key){
     deleteBtn.classList.remove('hidden');
   } else {
     deleteBtn.classList.add('hidden');
+  }
+  // ── Seen count ──
+  const seenCount=Object.keys(c.seenBy||{}).length;
+  const seenEl=$('popupSeenCount');
+  if(seenEl) seenEl.textContent=seenCount>0?`👁 ${seenCount} saw this`:'';
+  if(currentUser&&!c.permanent){
+    db.ref('confessions/'+key+'/seenBy/'+currentUser.uid).set(true);
+  }
+  // ── Saved state ──
+  const saveBtn=$('saveWhisperBtn');
+  if(saveBtn){
+    const isSaved=userSaved[key]||false;
+    saveBtn.classList.toggle('saved',isSaved);
+    saveBtn.title=isSaved?'Remove from saved':'Save this whisper';
+    saveBtn.textContent=isSaved?'🔖':'🔖';
   }
   renderReplies(c);
   $('confessionPopup').classList.add('open');
@@ -1425,6 +1441,94 @@ if(featuredCloseBtn){
   });
 }
 
+// ── SAVED WHISPERS ────────────────────────────
+async function toggleSaveWhisper(){
+  if(!currentUser||!activeId) return;
+  const key=activeId;
+  const ref=db.ref('users/'+currentUser.uid+'/saved/'+key);
+  const isSaved=userSaved[key]||false;
+  if(isSaved){
+    await ref.remove();
+    showToast('Removed from saved 🌿');
+  } else {
+    await ref.set(true);
+    showToast('Whisper saved 🔖');
+  }
+  // Update button immediately
+  const saveBtn=$('saveWhisperBtn');
+  if(saveBtn){
+    const nowSaved=!isSaved;
+    saveBtn.classList.toggle('saved',nowSaved);
+    saveBtn.title=nowSaved?'Remove from saved':'Save this whisper';
+  }
+}
+
+function renderSavedTab(){
+  const list=$('savedList');
+  if(!list) return;
+  const savedKeys=Object.keys(userSaved);
+  if(savedKeys.length===0){
+    list.innerHTML=`<div class="saved-empty">
+      <p class="saved-empty-text">No saved whispers yet</p>
+      <p class="saved-empty-sub">Tap 🔖 on any whisper to save it here</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML='';
+  savedKeys.forEach(key=>{
+    const c=confessions[key];
+    const div=document.createElement('div');
+    div.className='saved-item';
+    if(c){
+      div.innerHTML=`
+        <div class="saved-item-dot" style="background:${c.moodColor}"></div>
+        <div class="saved-item-body">
+          <p class="saved-item-text">${escHtml(c.content||'📷 Media whisper').substring(0,120)}${(c.content||'').length>120?'…':''}</p>
+          <span class="saved-item-meta">${c.mood||''} · ${timeAgo(c.timestamp)}</span>
+        </div>
+        <button class="saved-item-open" onclick="openPopupFromSaved('${key}')">→</button>`;
+    } else {
+      // Whisper has expired
+      div.innerHTML=`
+        <div class="saved-item-dot" style="background:#666"></div>
+        <div class="saved-item-body">
+          <p class="saved-item-text" style="color:var(--muted);font-style:italic">This whisper has faded away</p>
+        </div>
+        <button class="saved-item-remove" onclick="removeSaved('${key}')">✕</button>`;
+    }
+    list.appendChild(div);
+  });
+}
+
+function openPopupFromSaved(key){
+  // Close profile panel first, then open popup
+  $('profilePanel').classList.remove('open');
+  setTimeout(()=>{ if(confessions[key]) openPopup(key); },300);
+}
+
+async function removeSaved(key){
+  if(!currentUser) return;
+  await db.ref('users/'+currentUser.uid+'/saved/'+key).remove();
+}
+
+// ── ONBOARDING ────────────────────────────────
+function checkOnboarding(){
+  if(!currentUser) return;
+  const key='bulong_onboarded_'+currentUser.uid;
+  if(localStorage.getItem(key)) return;
+  // Show onboarding after a short delay so map loads first
+  setTimeout(()=>{
+    const el=$('onboardingOverlay');
+    if(el) el.classList.add('open');
+  }, 1800);
+}
+
+function dismissOnboarding(){
+  const el=$('onboardingOverlay');
+  if(el) el.classList.remove('open');
+  if(currentUser) localStorage.setItem('bulong_onboarded_'+currentUser.uid, '1');
+}
+
 // ── SUBSCRIPTION / VOUCHER SYSTEM ────────────
 const VALID_VOUCHERS = {
   'BULONG-XL-2026-ED01': { days: 30, label: 'Early Access Gift' },
@@ -1986,11 +2090,17 @@ function launchApp(user,profile){
   updateNavProfile(); updateLimitUI(); initMap(); listenNotifs();
   if(window._dismissLoader) window._dismissLoader();
   setTimeout(()=>{ showToast('Welcome to Bulong. You are safe here. 🌿'); Sound.welcome(); }, 800);
+  setTimeout(checkOnboarding, 2000);
   // Keep subscription data in sync
   db.ref('users/'+user.uid+'/subscription').on('value', snap=>{
     if(!userProfile) return;
     userProfile.subscription = snap.val();
     updateLimitUI();
+  });
+  // Keep saved whispers in sync
+  db.ref('users/'+user.uid+'/saved').on('value', snap=>{
+    userSaved = snap.val() || {};
+    renderSavedTab();
   });
 }
 
@@ -2432,5 +2542,27 @@ document.getElementById('zoomMeBtn')?.addEventListener('click',()=>{
       const sec=$(map2[type]);
       if(sec) sec.classList.remove('hidden');
     });
+  });
+})();
+
+// ── ONBOARDING STEPS ──────────────────────────
+(function(){
+  let currentStep=0;
+  const totalSteps=4;
+  const nextBtn=$('obNext');
+  if(!nextBtn) return;
+  function goToStep(n){
+    for(let i=0;i<totalSteps;i++){
+      const step=$('obStep'+(i+1));
+      const dot=$('obDot'+i);
+      if(step) step.classList.toggle('active',i===n);
+      if(dot)  dot.classList.toggle('active',i===n);
+    }
+    currentStep=n;
+    if(nextBtn) nextBtn.textContent=n===totalSteps-1?'Begin 🌿':'Next →';
+  }
+  nextBtn.addEventListener('click',()=>{
+    if(currentStep<totalSteps-1){ goToStep(currentStep+1); }
+    else { dismissOnboarding(); }
   });
 })();
