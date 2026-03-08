@@ -2543,24 +2543,7 @@ document.getElementById('zoomMeBtn')?.addEventListener('click',()=>{
 })();
 
 // ── VOICE + DOODLE SUBMISSION INTEGRATION ─────
-// Patch submitConfession to handle voice and doodle types
-(function(){
-  const origSubmit=$('submitConfession');
-  if(!origSubmit) return;
-
-  // Hook into type selection to track voice/doodle
-  document.querySelectorAll('.type-tab').forEach(tab=>{
-    tab.addEventListener('click',()=>{
-      // Show/hide sections — reuse existing logic but add voice+doodle
-      const type=tab.dataset.type;
-      ['messageSection','photoSection','videoSection','youtubeSection','tiktokSection','voiceSection','doodleSection']
-        .forEach(id=>{ const el=$(id); if(el) el.classList.add('hidden'); });
-      const map2={message:'messageSection',photo:'photoSection',video:'videoSection',youtube:'youtubeSection',tiktok:'tiktokSection',voice:'voiceSection',doodle:'doodleSection'};
-      const sec=$(map2[type]);
-      if(sec) sec.classList.remove('hidden');
-    });
-  });
-})();
+// (type-tab switching handled by main listener above)
 
 // ── ONBOARDING STEPS ──────────────────────────
 (function(){
