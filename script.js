@@ -528,15 +528,23 @@ function startConfessionsListener(){
     confessions=snap.val()||{};
     const now=Date.now();
     Object.keys(confessions).forEach(k=>{
-      if(confessions[k].permanent) return; // skip permanent fake whispers
+      if(confessions[k].permanent) return;
       if(confessions[k].expiresAt&&confessions[k].expiresAt<now){
         delete confessions[k];
         db.ref('confessions/'+k).remove();
       }
     });
+    // Hide skeleton on first load
+    const skel=$('mapSkeleton');
+    if(skel&&!skel.classList.contains('hidden')){
+      skel.style.opacity='0';
+      setTimeout(()=>skel.classList.add('hidden'),600);
+    }
     renderGlows();
     pickWOTD();
     updateMoodCounter();
+    updateEmptyState();
+    loadFeaturedWhisper();
   });
 }
 
@@ -624,9 +632,16 @@ function applyNavMoodColor(mood){
 document.querySelectorAll('.mf-btn').forEach(btn=>btn.addEventListener('click',()=>{
   document.querySelectorAll('.mf-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  activeMood=btn.dataset.mood;
-  renderGlows();
-  applyNavMoodColor(activeMood);
+  // Fade out existing dots
+  document.querySelectorAll('.confession-glow').forEach(el=>{
+    el.classList.add('fade-out');
+  });
+  setTimeout(()=>{
+    activeMood=btn.dataset.mood;
+    renderGlows();
+    applyNavMoodColor(activeMood);
+    updateEmptyState();
+  }, 350);
 }));
 
 // ── WHISPER OF THE DAY ────────────────────────
@@ -1343,6 +1358,53 @@ $('saliwChangeMood').addEventListener('click', ()=>{
   $('saliwPlayerScreen').classList.add('hidden');
   $('saliwMoodScreen').classList.remove('hidden');
 });
+
+// ── EMPTY STATE ───────────────────────────────
+function updateEmptyState(){
+  const emptyEl=$('mapEmpty');
+  if(!emptyEl) return;
+  const visible=Object.values(confessions).filter(c=>
+    activeMood==='all' || c.mood===activeMood
+  );
+  if(visible.length===0){
+    emptyEl.classList.remove('hidden');
+    const titleEl=$('emptyTitle');
+    const subEl=$('emptySub');
+    if(activeMood!=='all'){
+      if(titleEl) titleEl.textContent=`no ${activeMood} whispers yet`;
+      if(subEl)   subEl.textContent='be the first to release one into the world';
+    } else {
+      if(titleEl) titleEl.textContent='no whispers here yet';
+      if(subEl)   subEl.textContent='be the first to release one into the world';
+    }
+  } else {
+    emptyEl.classList.add('hidden');
+  }
+}
+
+// ── FEATURED WHISPER ──────────────────────────
+let featuredDismissed = false;
+function loadFeaturedWhisper(){
+  if(featuredDismissed) return;
+  db.ref('featured').once('value').then(snap=>{
+    const f=snap.val();
+    if(!f||!f.active||!f.text) return;
+    const banner=$('featuredBanner');
+    const textEl=$('featuredText');
+    const authorEl=$('featuredAuthor');
+    if(!banner||!textEl) return;
+    textEl.textContent=f.text;
+    if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
+    banner.classList.remove('hidden');
+  });
+}
+const featuredCloseBtn=$('featuredClose');
+if(featuredCloseBtn){
+  featuredCloseBtn.addEventListener('click',()=>{
+    featuredDismissed=true;
+    $('featuredBanner').classList.add('hidden');
+  });
+}
 
 // ── SUBSCRIPTION / VOUCHER SYSTEM ────────────
 const VALID_VOUCHERS = {
