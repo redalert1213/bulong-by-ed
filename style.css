@@ -1159,7 +1159,7 @@ body { -webkit-overflow-scrolling: touch; }
 .featured-banner{
   position:fixed;top:100px;left:50%;
   transform:translateX(-50%);
-  z-index:799;width:94%;max-width:440px;
+  z-index:801;width:94%;max-width:440px;
   background:rgba(13,17,15,0.88);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border:1px solid rgba(240,201,127,0.2);
