@@ -1407,9 +1407,11 @@ function loadFeaturedWhisper(){
   db.ref('featured').on('value', snap=>{
     if(featuredDismissed) return;
     const f=snap.val();
+    console.log('[Featured] data:', JSON.stringify(f));
     const banner=$('featuredBanner');
     const textEl=$('featuredText');
     const authorEl=$('featuredAuthor');
+    console.log('[Featured] banner element:', banner);
     if(!banner||!textEl) return;
     if(!f||!f.active||!f.text){
       banner.classList.add('hidden');
@@ -1419,6 +1421,7 @@ function loadFeaturedWhisper(){
     textEl.textContent=f.text;
     if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
     banner.classList.remove('hidden');
+    console.log('[Featured] banner shown ✅');
     setTimeout(()=>adjustWotdPosition(true), 50);
   });
 }
