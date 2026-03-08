@@ -1384,20 +1384,22 @@ function updateEmptyState(){
 
 // ── FEATURED WHISPER ──────────────────────────
 let featuredDismissed = false;
-function loadFeaturedWhisper(){
+function loadFeaturedWhisper(){}  // kept for compatibility, listener below handles it
+db.ref('featured').on('value', snap=>{
   if(featuredDismissed) return;
-  db.ref('featured').once('value').then(snap=>{
-    const f=snap.val();
-    if(!f||!f.active||!f.text) return;
-    const banner=$('featuredBanner');
-    const textEl=$('featuredText');
-    const authorEl=$('featuredAuthor');
-    if(!banner||!textEl) return;
-    textEl.textContent=f.text;
-    if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
-    banner.classList.remove('hidden');
-  });
-}
+  const f=snap.val();
+  const banner=$('featuredBanner');
+  const textEl=$('featuredText');
+  const authorEl=$('featuredAuthor');
+  if(!banner||!textEl) return;
+  if(!f||!f.active||!f.text){
+    banner.classList.add('hidden');
+    return;
+  }
+  textEl.textContent=f.text;
+  if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
+  banner.classList.remove('hidden');
+});
 const featuredCloseBtn=$('featuredClose');
 if(featuredCloseBtn){
   featuredCloseBtn.addEventListener('click',()=>{
