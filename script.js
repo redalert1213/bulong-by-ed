@@ -246,7 +246,7 @@ function totalReacts(c){ const r=c.reactions||{}; return (r.heart||0)+(r.candle|
 
   function sz(){
     canvas.width=innerWidth;
-    canvas.height=innerHeight-88;
+    canvas.height=innerHeight-58;
   }
   sz();addEventListener('resize',sz);
 
