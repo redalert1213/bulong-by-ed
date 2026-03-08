@@ -205,6 +205,19 @@
   </div>
 
   <!-- WHISPER OF THE DAY -->
+  <!-- FEATURED WHISPER (admin-pinned) -->
+  <div class="featured-banner hidden" id="featuredBanner">
+    <div class="featured-inner">
+      <div class="featured-label">
+        <span class="featured-star">✦</span>
+        <span>featured whisper</span>
+      </div>
+      <p class="featured-text" id="featuredText"></p>
+      <span class="featured-author" id="featuredAuthor"></span>
+    </div>
+    <button class="featured-close" id="featuredClose">✕</button>
+  </div>
+
   <div class="wotd-banner hidden" id="wotdBanner">
     <div class="wotd-inner">
       <div class="wotd-label"><span class="wotd-dot" id="wotdDot"></span><span>Whisper of the day</span></div>
@@ -218,6 +231,31 @@
   <!-- MAP -->
   <div id="map"></div>
   <div id="glowContainer"></div>
+
+  <!-- SKELETON LOADER — shows while Firebase loads -->
+  <div class="map-skeleton" id="mapSkeleton">
+    <div class="sk-pulse sk-dot" style="top:38%;left:52%"></div>
+    <div class="sk-pulse sk-dot" style="top:44%;left:45%;animation-delay:0.3s"></div>
+    <div class="sk-pulse sk-dot" style="top:55%;left:58%;animation-delay:0.6s"></div>
+    <div class="sk-pulse sk-dot" style="top:48%;left:62%;animation-delay:0.15s"></div>
+    <div class="sk-pulse sk-dot" style="top:60%;left:42%;animation-delay:0.45s"></div>
+    <div class="sk-pulse sk-dot lg" style="top:41%;left:55%;animation-delay:0.2s"></div>
+    <div class="sk-pulse sk-dot sm" style="top:52%;left:48%;animation-delay:0.5s"></div>
+    <div class="sk-label">gathering whispers<span class="sk-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  </div>
+
+  <!-- EMPTY STATE — shows when no whispers match filter -->
+  <div class="map-empty hidden" id="mapEmpty">
+    <div class="empty-inner">
+      <div class="empty-orbs">
+        <span class="empty-orb" style="--c:#84A98C;--d:0s"></span>
+        <span class="empty-orb" style="--c:#B8A0B3;--d:0.4s"></span>
+        <span class="empty-orb" style="--c:#9FB4C7;--d:0.8s"></span>
+      </div>
+      <p class="empty-title" id="emptyTitle">no whispers here yet</p>
+      <p class="empty-sub" id="emptySub">be the first to release one into the world</p>
+    </div>
+  </div>
 
   <!-- CONSTELLATION CANVAS (on top of map) -->
   <canvas id="constellationCanvas" style="position:fixed;inset:0;top:94px;pointer-events:none;z-index:3;opacity:0.55;"></canvas>
