@@ -1385,6 +1385,19 @@ function updateEmptyState(){
 // ── FEATURED WHISPER ──────────────────────────
 let featuredDismissed = false;
 function loadFeaturedWhisper(){}  // kept for compatibility, listener below handles it
+
+function adjustWotdPosition(featuredVisible){
+  const wotd = $('wotdBanner');
+  if(!wotd) return;
+  if(featuredVisible){
+    const fBanner = $('featuredBanner');
+    const fHeight = fBanner ? fBanner.offsetHeight + 8 : 0;
+    wotd.style.top = (100 + fHeight) + 'px';
+  } else {
+    wotd.style.top = '';
+  }
+}
+
 db.ref('featured').on('value', snap=>{
   if(featuredDismissed) return;
   const f=snap.val();
@@ -1394,17 +1407,20 @@ db.ref('featured').on('value', snap=>{
   if(!banner||!textEl) return;
   if(!f||!f.active||!f.text){
     banner.classList.add('hidden');
+    adjustWotdPosition(false);
     return;
   }
   textEl.textContent=f.text;
   if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
   banner.classList.remove('hidden');
+  setTimeout(()=>adjustWotdPosition(true), 50);
 });
 const featuredCloseBtn=$('featuredClose');
 if(featuredCloseBtn){
   featuredCloseBtn.addEventListener('click',()=>{
     featuredDismissed=true;
     $('featuredBanner').classList.add('hidden');
+    adjustWotdPosition(false);
   });
 }
 
