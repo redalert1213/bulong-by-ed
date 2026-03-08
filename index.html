@@ -404,6 +404,17 @@
       </div>
       <div class="my-posts-list" id="myPostsList"></div>
 
+      <!-- SAVED WHISPERS inside profile panel -->
+      <div class="profile-section-divider">
+        <span>Saved whispers</span>
+      </div>
+      <div class="saved-list" id="savedList">
+        <div class="saved-empty">
+          <p class="saved-empty-text">No saved whispers yet</p>
+          <p class="saved-empty-sub">Tap 🔖 on any whisper to save it here</p>
+        </div>
+      </div>
+
       <!-- SAFETY inside profile panel -->
       <div class="profile-section-divider">
         <span>Safety & Privacy</span>
@@ -755,9 +766,11 @@
         <button class="react-btn" data-react="candle" title="Lighting a candle">🕯 <span class="react-count" id="candleCount">0</span></button>
         <button class="react-btn" data-react="hug"    title="Virtual hug">🫂 <span class="react-count" id="hugCount">0</span></button>
         <button class="react-btn" data-react="needed" title="I needed to read this">🫶 <span class="react-count" id="neededCount">0</span></button>
+        <button class="react-btn save-btn" id="saveWhisperBtn" title="Save this whisper" onclick="toggleSaveWhisper()">🔖</button>
         <button class="react-btn share-btn" id="shareWhisperBtn" title="Share this whisper">🔗</button>
         <button class="react-btn delete-btn hidden" id="deleteWhisperBtn" title="Delete your whisper">🗑</button>
       </div>
+      <div class="popup-seen" id="popupSeenCount"></div>
       <div class="reply-section">
         <div class="replies-list" id="repliesList"></div>
         <div class="reply-input-row">
@@ -806,6 +819,60 @@
   <div class="panel-backdrop" id="panelBackdrop"></div>
 
 </div><!-- end app-shell -->
+
+<!-- ONBOARDING OVERLAY -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-card">
+    <div class="onboarding-orbs">
+      <span class="ob-orb" style="--c:#84A98C;--d:0s;--x:30%;--y:20%"></span>
+      <span class="ob-orb" style="--c:#B8A0B3;--d:0.5s;--x:70%;--y:60%"></span>
+      <span class="ob-orb" style="--c:#9FB4C7;--d:1s;--x:15%;--y:70%"></span>
+    </div>
+    <div class="onboarding-content">
+      <div class="onboarding-steps" id="onboardingSteps">
+
+        <!-- Step 1 -->
+        <div class="ob-step active" id="obStep1">
+          <div class="ob-icon">🌿</div>
+          <h2 class="ob-title">Welcome to Bulong</h2>
+          <p class="ob-desc">A quiet space to release what you've been carrying. Your whispers float into the world — seen by strangers who understand.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="ob-step" id="obStep2">
+          <div class="ob-icon">🗺</div>
+          <h2 class="ob-title">The map listens</h2>
+          <p class="ob-desc">Every glowing dot is a real person's whisper. Tap any dot to read it, react, or offer a kind word.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="ob-step" id="obStep3">
+          <div class="ob-icon">🔖</div>
+          <h2 class="ob-title">Save what moves you</h2>
+          <p class="ob-desc">Tap 🔖 on any whisper to save it. Find your saved whispers anytime in your profile.</p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="ob-step" id="obStep4">
+          <div class="ob-icon">🤍</div>
+          <h2 class="ob-title">You are safe here</h2>
+          <p class="ob-desc">No real names. No judgment. Just honest feelings, released into the world. Bulong is yours.</p>
+        </div>
+
+      </div>
+      <div class="ob-dots">
+        <span class="ob-dot active" id="obDot0"></span>
+        <span class="ob-dot" id="obDot1"></span>
+        <span class="ob-dot" id="obDot2"></span>
+        <span class="ob-dot" id="obDot3"></span>
+      </div>
+      <div class="ob-actions">
+        <button class="ob-btn-skip" id="obSkip" onclick="dismissOnboarding()">Skip</button>
+        <button class="ob-btn-next" id="obNext">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="script.js"></script>
 </body>
