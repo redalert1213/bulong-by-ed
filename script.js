@@ -546,7 +546,6 @@ function startConfessionsListener(){
     pickWOTD();
     updateMoodCounter();
     updateEmptyState();
-    loadFeaturedWhisper();
   });
 }
 
@@ -1404,45 +1403,48 @@ function updateEmptyState(){
 // ── FEATURED WHISPER ──────────────────────────
 let featuredDismissed = false;
 function loadFeaturedWhisper(){
-  db.ref('featured').on('value', snap=>{
-    if(featuredDismissed) return;
-    const f=snap.val();
-    console.log('[Featured] data:', JSON.stringify(f));
-    const banner=$('featuredBanner');
-    const textEl=$('featuredText');
-    const authorEl=$('featuredAuthor');
-    console.log('[Featured] banner element:', banner);
-    if(!banner||!textEl) return;
-    if(!f||!f.active||!f.text){
-      banner.classList.add('hidden');
-      adjustWotdPosition(false);
-      return;
-    }
-    textEl.textContent=f.text;
-    if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
-    banner.classList.remove('hidden');
-    console.log('[Featured] banner shown ✅');
-    setTimeout(()=>adjustWotdPosition(true), 50);
-  });
+  if(featuredDismissed) return;
+  try {
+    db.ref('featured').once('value').then(snap=>{
+      try {
+        const f=snap.val();
+        const banner=$('featuredBanner');
+        const textEl=$('featuredText');
+        const authorEl=$('featuredAuthor');
+        if(!banner||!textEl) return;
+        if(!f||!f.active||!f.text){
+          banner.classList.add('hidden');
+          adjustWotdPosition(false);
+          return;
+        }
+        textEl.textContent=f.text;
+        if(authorEl) authorEl.textContent=f.author?'— '+f.author:'';
+        banner.classList.remove('hidden');
+        setTimeout(()=>adjustWotdPosition(true), 50);
+      } catch(e){ console.warn('Featured banner error:',e); }
+    }).catch(e=>{ console.warn('Featured fetch error:',e); });
+  } catch(e){ console.warn('Featured init error:',e); }
 }
 
 function adjustWotdPosition(featuredVisible){
-  const wotd = $('wotdBanner');
-  if(!wotd) return;
-  if(featuredVisible){
-    const fBanner = $('featuredBanner');
-    const fHeight = fBanner ? fBanner.offsetHeight + 8 : 0;
-    wotd.style.top = (100 + fHeight) + 'px';
-  } else {
-    wotd.style.top = '';
-  }
+  try {
+    const wotd = $('wotdBanner');
+    if(!wotd) return;
+    if(featuredVisible){
+      const fBanner = $('featuredBanner');
+      const fHeight = fBanner ? fBanner.offsetHeight + 8 : 0;
+      wotd.style.top = (100 + fHeight) + 'px';
+    } else {
+      wotd.style.top = '';
+    }
+  } catch(e){}
 }
 
 const featuredCloseBtn=$('featuredClose');
 if(featuredCloseBtn){
   featuredCloseBtn.addEventListener('click',()=>{
     featuredDismissed=true;
-    $('featuredBanner').classList.add('hidden');
+    const b=$('featuredBanner'); if(b) b.classList.add('hidden');
     adjustWotdPosition(false);
   });
 }
@@ -2097,17 +2099,6 @@ function launchApp(user,profile){
   if(window._dismissLoader) window._dismissLoader();
   setTimeout(()=>{ showToast('Welcome to Bulong. You are safe here. 🌿'); Sound.welcome(); }, 800);
   setTimeout(checkOnboarding, 2000);
-  // Start featured whisper listener
-  loadFeaturedWhisper();
-  // Featured close button
-  const _fClose=$('featuredClose');
-  if(_fClose){
-    _fClose.onclick=()=>{
-      featuredDismissed=true;
-      $('featuredBanner').classList.add('hidden');
-      adjustWotdPosition(false);
-    };
-  }
   // Keep subscription data in sync
   db.ref('users/'+user.uid+'/subscription').on('value', snap=>{
     if(!userProfile) return;
