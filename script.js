@@ -335,10 +335,11 @@ function totalReacts(c){ const r=c.reactions||{}; return (r.heart||0)+(r.candle|
     shooters.forEach(s=>{
       s.life-=0.022;
       s.x+=s.dx;s.y+=s.dy;
-      const alpha=s.life*0.9;
+      const alpha=Math.max(0,Math.min(1,s.life));
+      const toHex=v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0');
       const grad=ctx.createLinearGradient(s.x,s.y,s.x-s.dx*(s.len/8),s.y-s.dy*(s.len/8));
-      grad.addColorStop(0,s.color+Math.round(alpha*255).toString(16).padStart(2,'0'));
-      grad.addColorStop(0.3,s.color+Math.round(alpha*120).toString(16).padStart(2,'0'));
+      grad.addColorStop(0,s.color+toHex(alpha*255));
+      grad.addColorStop(0.3,s.color+toHex(alpha*120));
       grad.addColorStop(1,s.color+'00');
       ctx.beginPath();
       ctx.moveTo(s.x,s.y);
