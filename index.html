@@ -170,7 +170,18 @@
       <svg class="brand-svg" width="40" height="31" viewBox="0 0 56 44"><use href="#bulong-logo"/></svg>
       <span class="brand-name">Bulong</span>
     </div>
-    <div class="nav-center"></div>
+    <div class="nav-center">
+      <!-- MOOD FILTER — inline on desktop, fixed bar on mobile via CSS -->
+      <div class="mood-filter-bar" id="moodFilterBar">
+        <button class="mf-btn active" data-mood="all">All</button>
+        <button class="mf-btn" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
+        <button class="mf-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
+        <button class="mf-btn" data-mood="relief"     data-color="#A8C4A2">🌱 Relief</button>
+        <button class="mf-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
+        <button class="mf-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
+        <button class="mf-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
+      </div>
+    </div>
     <div class="nav-right">
       <div class="online-indicator">
         <span class="pulse-dot"></span>
@@ -192,17 +203,6 @@
       <button class="night-toggle" id="nightToggle" title="Toggle light mode"><span class="night-icon">☀️</span></button>
     </div>
   </nav>
-
-  <!-- MOOD FILTER BAR -->
-  <div class="mood-filter-bar">
-    <button class="mf-btn active" data-mood="all">All</button>
-    <button class="mf-btn" data-mood="melancholy" data-color="#B8A0B3">🌧 Melancholy</button>
-    <button class="mf-btn" data-mood="longing"    data-color="#84A98C">🌿 Longing</button>
-    <button class="mf-btn" data-mood="relief"     data-color="#A8C4A2">🌱 Relief</button>
-    <button class="mf-btn" data-mood="love"       data-color="#E8A5B0">🌸 Love</button>
-    <button class="mf-btn" data-mood="grief"      data-color="#7B8DB0">🌊 Grief</button>
-    <button class="mf-btn" data-mood="hope"       data-color="#F0C97F">✨ Hope</button>
-  </div>
 
   <!-- WHISPER OF THE DAY -->
   <!-- FEATURED WHISPER (admin-pinned) -->
@@ -258,7 +258,7 @@
   </div>
 
   <!-- CONSTELLATION CANVAS (on top of map) -->
-  <canvas id="constellationCanvas" style="position:fixed;inset:0;top:88px;pointer-events:none;z-index:3;opacity:0.55;"></canvas>
+  <canvas id="constellationCanvas" style="position:fixed;inset:0;top:58px;pointer-events:none;z-index:3;opacity:0.55;"></canvas>
 
   <!-- MAP CONTROLS -->
   <div class="map-controls">
